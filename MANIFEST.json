@@ -1,0 +1,114 @@
+{
+  "version": "1.0.0",
+  "package": "stable-core",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "b09563f774715eb2c6ef0f63a5a17e12cf5bbcf7a99eb1189d6e620b46545dc4"
+    },
+    {
+      "path": "RELEASE_NOTES.md",
+      "sha256": "1640467167e5f3f71eca0332fac04f536e63b8f9425ce15e9d8da28ae4003deb"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/SKILL.md",
+      "sha256": "dd52f56ec720277b603abcc71ac49baadea027b6f1bd24111f61b301b7d3339f"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/agents/openai.yaml",
+      "sha256": "06ba56c72334f9f96597cecae45843a855cad3ffc3c74542e41154ff53201ac8"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/assets/visual-reference-rater.template.html",
+      "sha256": "c23efdcd6ace65ed5d750ba55c023a3039eeb211900822d82f0902bf032326ff"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/references/agentic_workflow_contract.md",
+      "sha256": "7ab75d7a2c7f7a097cb4caebc52eac6b0599507829159adba79487e9df151808"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/references/category_design_playbooks.md",
+      "sha256": "a0847d38c0a2449a847aacf5043c6f72ee9d1159feb36462dbb36dfb3e2797f0"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/references/production_scope_contract.md",
+      "sha256": "79cd11e4eec98dd3a9f4f888de0c646335708d3f54fa0b457538574304eabbe5"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/references/reference_discovery.md",
+      "sha256": "3619d947c21040e742c42c8339c0276a042441285eab5aeb65f6fa251fd2cff1"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/references/reference_strategy_contract.md",
+      "sha256": "b7999ff223e7d8846773a0194c2b90eefd0d464b89d3551808283725f609c263"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/references/visual_preference_calibration.md",
+      "sha256": "26e981c2f4ad5998a892ea8198c642cefe323f5289c545f0cc258ebd58243c64"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/adaptive_scheduler.py",
+      "sha256": "58909163746fa4f7883c9c0dd011c0e33647297c0930e024a5b2ce12069669ea"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/bootstrap_run.py",
+      "sha256": "5cbab3ebdc4d7299cf9725234df9ac08838e7d793c34fd3f177111656c5a2974"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/build_visual_reference_rater.py",
+      "sha256": "48746733bb16adef66e9d994c0c172386e0a66edf0942f0973b6fe90db293317"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/build_visual_reference_rater_legacy.py",
+      "sha256": "5ad09506b6f78c3e93de77ec46ccba81c2a9a5d0f01fb8741d3227f6e8f3bdcc"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/derive_production_artifacts.py",
+      "sha256": "890694a1245b7e83283cb173e438aad31f098af14431d1f4f5afc603956f710c"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/design_workflow_state.py",
+      "sha256": "f00d0e363ced89f302f1f7c2a6df7182885d7d71a85df93b49134dc748a323e3"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/generation_ledger.py",
+      "sha256": "a6ea805ec3dfff301bc84a5d94b7b05914467accdbfa228f7cc048260c8ee475"
+    },
+    {
+      "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/reference_discovery.py",
+      "sha256": "34ff953f65adcdae4750f3c0d5fa5ae96be55e5d59ec06dc72fe30eeb766f5f5"
+    },
+    {
+      "path": "skills/amazon-image-production-runner/SKILL.md",
+      "sha256": "2e69a8373d3a414c399a89a1bec26cbc8f0eada7c6f7a3f2cea5c1dcd2b3243f"
+    },
+    {
+      "path": "skills/amazon-image-production-runner/agents/openai.yaml",
+      "sha256": "f9fcbd7d2a336b6e228d233d456d8e1cc37db4f3f0fb6d38978881d2ee7ddc6f"
+    },
+    {
+      "path": "skills/amazon-image-production-runner/references/agentic_production_contract.md",
+      "sha256": "a06f9d8adfbdd4775de649548825cf322cd0bb7b28cc12712870b474d3409842"
+    },
+    {
+      "path": "skills/amazon-image-production-runner/references/layout_matrix_contract.md",
+      "sha256": "bb11747e0d4589d54ad376661addf6c8427f1f753fa533fdd73fea519f48b39c"
+    },
+    {
+      "path": "skills/amazon-image-production-runner/references/product_exposure_role_check.md",
+      "sha256": "210b0df8f260157b95769d0f153d92707ec7183c297052b48b5633ccd60d1280"
+    },
+    {
+      "path": "skills/amazon-image-production-runner/references/slot_manifest_contract.md",
+      "sha256": "3508382c897f7db30f8d73c02235e8beb74e79e19db76b0f66a0a3966ddc1c26"
+    },
+    {
+      "path": "skills/amazon-image-production-runner/scripts/postprocess_images.py",
+      "sha256": "e3fdb7bf5d37b74b4195e95e4966dc432470e84d257a76237ac018be35bb669c"
+    },
+    {
+      "path": "skills/amazon-image-production-runner/scripts/preflight_qc.py",
+      "sha256": "70b8e95bf3e4a472eee1aa122f25ea8678ae7a6a68dc748b60d75a4ee9f8f753"
+    }
+  ]
+}

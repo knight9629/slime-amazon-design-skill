@@ -1,0 +1,526 @@
+<section id="__ROOT_ID__" class="vr-root" data-visual-reference-rater="true" data-card-mode="MODULE_COLLAGE" aria-labelledby="__ROOT_ID__-title">
+  <header class="vr-intro">
+    <div class="vr-heading-row">
+      <div>
+        <h1 id="__ROOT_ID__-title">__TITLE__</h1>
+        <p>每张卡来自一个可追溯完整项目，并同时展示主视觉、卖点模块、排版系统和字体图标。请分别评价画面与排版。</p>
+      </div>
+      <strong class="vr-progress-text" data-progress-text>已完成 0 / __SAMPLE_COUNT__</strong>
+    </div>
+    <div class="vr-progress" role="progressbar" aria-label="评分进度" aria-valuenow="0" aria-valuemin="0" aria-valuemax="__SAMPLE_COUNT__">
+      <span data-progress-bar></span>
+    </div>
+  </header>
+
+  <div class="vr-card-grid" data-card-grid aria-live="polite"></div>
+
+  <footer class="vr-submit-area">
+    <div class="vr-actions">
+      <button type="button" class="vr-button vr-button-primary" data-submit disabled>提交已评分项目</button>
+      <button type="button" class="vr-button" data-reset>清空重选</button>
+    </div>
+    <p data-submit-note>全部项目的两个轴都完成后即可提交。</p>
+    <div data-fallback hidden>
+      <label for="__ROOT_ID__-fallback">若自动提交不可用，请复制这段结果发回当前对话</label>
+      <textarea id="__ROOT_ID__-fallback" rows="8" readonly data-fallback-output></textarea>
+    </div>
+  </footer>
+
+  <dialog class="vr-dialog" aria-labelledby="__ROOT_ID__-zoom-title">
+    <div class="vr-zoom-head">
+      <div>
+        <h2 id="__ROOT_ID__-zoom-title" data-zoom-title></h2>
+        <p data-zoom-meta></p>
+      </div>
+      <button type="button" class="vr-button" data-close-zoom>关闭</button>
+    </div>
+    <div class="vr-sprite-window vr-sprite-window-zoom">
+      <img class="vr-sprite-image" alt="" data-zoom-image>
+    </div>
+    <div class="vr-actions">
+      <button type="button" class="vr-button" data-zoom-prev>上一组</button>
+      <button type="button" class="vr-button" data-zoom-next>下一组</button>
+    </div>
+  </dialog>
+</section>
+
+<style>
+  #__ROOT_ID__ {
+    color: var(--foreground);
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+    width: 100%;
+  }
+
+  #__ROOT_ID__ * {
+    box-sizing: border-box;
+  }
+
+  #__ROOT_ID__ h1,
+  #__ROOT_ID__ h2,
+  #__ROOT_ID__ p {
+    margin: 0;
+  }
+
+  #__ROOT_ID__ .vr-intro,
+  #__ROOT_ID__ .vr-submit-area,
+  #__ROOT_ID__ .vr-card,
+  #__ROOT_ID__ .vr-rating-block,
+  #__ROOT_ID__ [data-fallback] {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  #__ROOT_ID__ .vr-heading-row,
+  #__ROOT_ID__ .vr-card-head,
+  #__ROOT_ID__ .vr-actions,
+  #__ROOT_ID__ .vr-zoom-head {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+  }
+
+  #__ROOT_ID__ .vr-heading-row > :first-child,
+  #__ROOT_ID__ .vr-card-head > :first-child,
+  #__ROOT_ID__ .vr-zoom-head > :first-child {
+    min-width: 0;
+  }
+
+  #__ROOT_ID__ .vr-heading-row p,
+  #__ROOT_ID__ .vr-card-meta,
+  #__ROOT_ID__ .vr-panel-labels,
+  #__ROOT_ID__ [data-submit-note],
+  #__ROOT_ID__ [data-zoom-meta] {
+    color: var(--muted-foreground);
+  }
+
+  #__ROOT_ID__ .vr-progress-text,
+  #__ROOT_ID__ .vr-card-id,
+  #__ROOT_ID__ .vr-rating-label {
+    font-weight: 500;
+  }
+
+  #__ROOT_ID__ .vr-progress {
+    background: var(--muted);
+    height: 0.45rem;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  #__ROOT_ID__ .vr-progress > span {
+    background: var(--primary);
+    display: block;
+    height: 100%;
+    transition: width 160ms ease;
+    width: 0;
+  }
+
+  #__ROOT_ID__ .vr-card-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+  }
+
+  #__ROOT_ID__ .vr-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--card-foreground);
+    min-width: 0;
+    padding: 0.85rem;
+  }
+
+  #__ROOT_ID__ .vr-card-title {
+    overflow-wrap: anywhere;
+  }
+
+  #__ROOT_ID__ .vr-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.65rem;
+  }
+
+  #__ROOT_ID__ .vr-card-meta a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  #__ROOT_ID__ .vr-preview-button {
+    appearance: none;
+    background: var(--muted);
+    border: 1px solid var(--border);
+    color: inherit;
+    cursor: zoom-in;
+    display: block;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  #__ROOT_ID__ .vr-sprite-window {
+    aspect-ratio: 16 / 9;
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+  }
+
+  #__ROOT_ID__ .vr-sprite-image {
+    display: block;
+    height: auto;
+    left: 0;
+    max-width: none;
+    position: absolute;
+    top: 0;
+    width: 100%;
+  }
+
+  #__ROOT_ID__ .vr-panel-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.7rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  #__ROOT_ID__ .vr-rating-options {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #__ROOT_ID__ .vr-button {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: inherit;
+    cursor: pointer;
+    min-height: 2.6rem;
+    min-width: 0;
+    padding: 0.55rem 0.7rem;
+  }
+
+  #__ROOT_ID__ .vr-button[aria-pressed="true"],
+  #__ROOT_ID__ .vr-button-primary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  #__ROOT_ID__ .vr-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  #__ROOT_ID__ textarea {
+    background: var(--background);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+    padding: 0.75rem;
+    resize: vertical;
+    width: 100%;
+  }
+
+  #__ROOT_ID__ .vr-dialog {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--card-foreground);
+    max-width: 980px;
+    padding: 1rem;
+    width: min(94%, 980px);
+  }
+
+  #__ROOT_ID__ .vr-dialog::backdrop {
+    background: color-mix(in srgb, var(--foreground) 52%, transparent);
+  }
+
+  #__ROOT_ID__ .vr-sprite-window-zoom {
+    margin: 0.75rem 0;
+  }
+
+  @media (max-width: 620px) {
+    #__ROOT_ID__ .vr-card-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    #__ROOT_ID__ .vr-heading-row,
+    #__ROOT_ID__ .vr-card-head,
+    #__ROOT_ID__ .vr-zoom-head {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    #__ROOT_ID__ .vr-actions {
+      align-items: stretch;
+      flex-direction: column;
+    }
+  }
+</style>
+
+<script>
+  (() => {
+    const root = document.getElementById("__ROOT_ID__");
+    if (!root) return;
+
+    const spriteData = "__SPRITE_DATA__";
+    const referencePoolSha256 = "__POOL_SHA256__";
+    const samples = __SAMPLE_META_JSON__;
+    const ratings = Object.fromEntries(samples.map((sample) => [sample.id, { visual: null, layout: null }]));
+    const cardGrid = root.querySelector("[data-card-grid]");
+    const progressText = root.querySelector("[data-progress-text]");
+    const progress = root.querySelector("[role='progressbar']");
+    const progressBar = root.querySelector("[data-progress-bar]");
+    const submitButton = root.querySelector("[data-submit]");
+    const resetButton = root.querySelector("[data-reset]");
+    const submitNote = root.querySelector("[data-submit-note]");
+    const fallback = root.querySelector("[data-fallback]");
+    const fallbackOutput = root.querySelector("[data-fallback-output]");
+    const dialog = root.querySelector("dialog");
+    const zoomTitle = root.querySelector("[data-zoom-title]");
+    const zoomMeta = root.querySelector("[data-zoom-meta]");
+    const zoomImage = root.querySelector("[data-zoom-image]");
+    let zoomIndex = 0;
+
+    const optionLabels = [
+      { value: -1, label: "不喜欢" },
+      { value: 0, label: "可用" },
+      { value: 1, label: "喜欢" }
+    ];
+    const roleLabels = {
+      HERO: "主视觉",
+      SELLING_MODULE: "卖点模块",
+      LAYOUT_SYSTEM: "排版系统",
+      TYPOGRAPHY_ICON: "字体图标",
+      FULL_PROJECT_OVERVIEW: "完整页面",
+      CAMPAIGN_VARIATION: "系列变化"
+    };
+
+    function spriteTransform(index) {
+      return `translateY(-${index * (100 / samples.length)}%)`;
+    }
+
+    function makeRatingBlock(sample, axis, label) {
+      const block = document.createElement("div");
+      block.className = "vr-rating-block";
+      const heading = document.createElement("span");
+      heading.className = "vr-rating-label";
+      heading.textContent = label;
+      const options = document.createElement("div");
+      options.className = "vr-rating-options";
+      options.dataset.ratingOptions = "true";
+      options.setAttribute("role", "group");
+      options.setAttribute("aria-label", `${sample.id} ${label}`);
+      optionLabels.forEach((option) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "vr-button";
+        button.textContent = option.label;
+        button.dataset.sampleId = sample.id;
+        button.dataset.axis = axis;
+        button.dataset.value = String(option.value);
+        button.setAttribute("aria-pressed", "false");
+        button.addEventListener("click", () => setRating(sample.id, axis, option.value));
+        options.appendChild(button);
+      });
+      block.append(heading, options);
+      return block;
+    }
+
+    function renderCards() {
+      samples.forEach((sample, index) => {
+        const card = document.createElement("article");
+        card.className = "vr-card";
+        card.dataset.moduleCard = sample.id;
+
+        const head = document.createElement("div");
+        head.className = "vr-card-head";
+        const titleWrap = document.createElement("div");
+        const id = document.createElement("span");
+        id.className = "vr-card-id";
+        id.textContent = sample.id;
+        const title = document.createElement("h2");
+        title.className = "vr-card-title";
+        title.textContent = sample.project;
+        titleWrap.append(id, title);
+        const status = document.createElement("span");
+        status.textContent = "待评分";
+        status.dataset.cardStatus = "true";
+        head.append(titleWrap, status);
+
+        const metadata = document.createElement("div");
+        metadata.className = "vr-card-meta";
+        const sourceLink = document.createElement("a");
+        sourceLink.href = sample.projectUrl;
+        sourceLink.target = "_blank";
+        sourceLink.rel = "noopener noreferrer";
+        sourceLink.dataset.projectUrl = sample.projectUrl;
+        sourceLink.textContent = sample.sourceKey;
+        const role = document.createElement("span");
+        role.textContent = sample.roleLabel;
+        const tier = document.createElement("span");
+        tier.textContent = sample.tierLabel;
+        metadata.append(sourceLink, role, tier);
+
+        const previewButton = document.createElement("button");
+        previewButton.type = "button";
+        previewButton.className = "vr-preview-button";
+        previewButton.dataset.previewButton = "true";
+        previewButton.setAttribute("aria-label", `放大查看 ${sample.id} ${sample.project}`);
+        const windowElement = document.createElement("span");
+        windowElement.className = "vr-sprite-window";
+        const image = document.createElement("img");
+        image.className = "vr-sprite-image";
+        image.src = spriteData;
+        image.alt = `${sample.id} 完整项目模块评分卡`;
+        image.style.transform = spriteTransform(index);
+        windowElement.appendChild(image);
+        previewButton.appendChild(windowElement);
+        previewButton.addEventListener("click", () => openZoom(index));
+
+        const panelLabels = document.createElement("ul");
+        panelLabels.className = "vr-panel-labels";
+        panelLabels.setAttribute("aria-label", "卡片包含的项目模块");
+        sample.moduleRoles.forEach((moduleRole) => {
+          const item = document.createElement("li");
+          item.dataset.modulePanel = moduleRole;
+          item.textContent = roleLabels[moduleRole] || moduleRole;
+          panelLabels.appendChild(item);
+        });
+
+        card.append(
+          head,
+          metadata,
+          previewButton,
+          panelLabels,
+          makeRatingBlock(sample, "visual", "画面风格"),
+          makeRatingBlock(sample, "layout", "信息排版")
+        );
+        cardGrid.appendChild(card);
+      });
+    }
+
+    function setRating(sampleId, axis, value) {
+      ratings[sampleId][axis] = value;
+      root.querySelectorAll(`[data-sample-id="${sampleId}"][data-axis="${axis}"]`).forEach((button) => {
+        button.setAttribute("aria-pressed", String(Number(button.dataset.value) === value));
+      });
+      const card = root.querySelector(`[data-module-card="${sampleId}"]`);
+      const complete = ratings[sampleId].visual !== null && ratings[sampleId].layout !== null;
+      card.querySelector("[data-card-status]").textContent = complete ? "已完成" : "还差一项";
+      updateProgress();
+    }
+
+    function completedCount() {
+      return samples.filter((sample) => ratings[sample.id].visual !== null && ratings[sample.id].layout !== null).length;
+    }
+
+    function updateProgress() {
+      const count = completedCount();
+      progressText.textContent = `已完成 ${count} / ${samples.length}`;
+      progress.setAttribute("aria-valuenow", String(count));
+      progressBar.style.width = `${(count / samples.length) * 100}%`;
+      submitButton.disabled = count !== samples.length;
+      submitNote.textContent = count === samples.length
+        ? "评分已齐，可以提交。"
+        : `还差 ${samples.length - count} 个项目。`;
+    }
+
+    function openZoom(index) {
+      zoomIndex = index;
+      updateZoom();
+      dialog.showModal();
+    }
+
+    function updateZoom() {
+      const sample = samples[zoomIndex];
+      zoomTitle.textContent = `${sample.id} · ${sample.project}`;
+      zoomMeta.textContent = `${sample.sourceKey} · ${sample.roleLabel} · ${sample.tierLabel}`;
+      zoomImage.src = spriteData;
+      zoomImage.alt = `${sample.id} 完整项目模块评分卡大图`;
+      zoomImage.style.transform = spriteTransform(zoomIndex);
+    }
+
+    function moveZoom(delta) {
+      zoomIndex = (zoomIndex + delta + samples.length) % samples.length;
+      updateZoom();
+    }
+
+    function payload() {
+      return {
+        test: "__TEST_ID__",
+        rater_contract_version: 1,
+        interaction_mode: "MODULE_CARD_BUTTONS",
+        reference_pool_sha256: referencePoolSha256,
+        scale: { "-1": "不喜欢", "0": "可用", "1": "喜欢" },
+        axes: { visual: "画面风格", layout: "信息排版" },
+        samples: samples.map((sample) => ({
+          id: sample.id,
+          source: sample.sourceKey,
+          project: sample.project,
+          role: sample.role,
+          referenceTier: sample.referenceTier,
+          visual: ratings[sample.id].visual,
+          layout: ratings[sample.id].layout
+        }))
+      };
+    }
+
+    async function submitRatings() {
+      if (completedCount() !== samples.length) return;
+      const result = payload();
+      const prompt = [
+        "这是我完成的 Amazon 卖货设计模块评分卡结果。",
+        JSON.stringify(result),
+        "请先分别总结画面风格与信息排版偏好，再列出有评分证据的拒绝项，判断哪些规则可迁移到当前产品；仅在两轴冲突或信号不足时安排受控两两对比。此时不要直接生成最终套图。"
+      ].join("\n");
+      submitButton.disabled = true;
+      submitButton.textContent = "正在提交…";
+      try {
+        if (!window.openai || typeof window.openai.sendFollowUpMessage !== "function") {
+          throw new Error("follow-up API unavailable");
+        }
+        await window.openai.sendFollowUpMessage({ prompt, title: "提交设计偏好评分" });
+        submitButton.textContent = "已提交";
+        submitNote.textContent = "评分已发回当前对话。";
+      } catch (error) {
+        fallbackOutput.value = JSON.stringify(result, null, 2);
+        fallback.hidden = false;
+        submitButton.disabled = false;
+        submitButton.textContent = "重新提交";
+        submitNote.textContent = "自动提交不可用，请复制下方结果。";
+      }
+    }
+
+    function resetRatings() {
+      samples.forEach((sample) => {
+        ratings[sample.id].visual = null;
+        ratings[sample.id].layout = null;
+      });
+      root.querySelectorAll("[data-axis][data-value]").forEach((button) => {
+        button.setAttribute("aria-pressed", "false");
+      });
+      root.querySelectorAll("[data-card-status]").forEach((status) => {
+        status.textContent = "待评分";
+      });
+      fallback.hidden = true;
+      submitButton.textContent = "提交已评分项目";
+      updateProgress();
+    }
+
+    root.querySelector("[data-close-zoom]").addEventListener("click", () => dialog.close());
+    root.querySelector("[data-zoom-prev]").addEventListener("click", () => moveZoom(-1));
+    root.querySelector("[data-zoom-next]").addEventListener("click", () => moveZoom(1));
+    submitButton.addEventListener("click", submitRatings);
+    resetButton.addEventListener("click", resetRatings);
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+
+    renderCards();
+    updateProgress();
+  })();
+</script>
