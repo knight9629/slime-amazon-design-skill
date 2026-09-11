@@ -1,9 +1,9 @@
 ---
 name: amazon-ai-design-workflow-orchestrator
-description: "Use when the user invokes the Amazon 主图A+ / 主图+A+ design skill, asks for Amazon main-image and A+ workflow execution, or needs project-stage control across product references, research, style sampling, prompts, image2 generation, QC, and export."
+description: "Use when the user invokes 史莱姆亚马逊设计skill or the Amazon 主图A+ / 主图+A+ design skill, asks for Amazon main-image and A+ workflow execution, or needs project-stage control across product references, research, style sampling, prompts, image2 generation, QC, and export."
 ---
 
-# 亚马逊设计师agent
+# 史莱姆亚马逊设计skill
 
 Skill version: `1.0.0`
 

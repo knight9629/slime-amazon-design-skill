@@ -4,19 +4,19 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "b09563f774715eb2c6ef0f63a5a17e12cf5bbcf7a99eb1189d6e620b46545dc4"
+      "sha256": "4fffe6e54a105b1616b0dd389e818ff3c2916459fad1091c8dc823e9d5c9763c"
     },
     {
       "path": "RELEASE_NOTES.md",
-      "sha256": "1640467167e5f3f71eca0332fac04f536e63b8f9425ce15e9d8da28ae4003deb"
+      "sha256": "14ead79c1680f45f741512c240949be7e4ce762aa8a8df5a73c0902791a7ce0f"
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/SKILL.md",
-      "sha256": "dd52f56ec720277b603abcc71ac49baadea027b6f1bd24111f61b301b7d3339f"
+      "sha256": "745453d191c052ca3c4f625b0d3bb496826779b6ebd409f16dee1f464aca0167"
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/agents/openai.yaml",
-      "sha256": "06ba56c72334f9f96597cecae45843a855cad3ffc3c74542e41154ff53201ac8"
+      "sha256": "b30f0dd784ed25f3b822cc9a86a1fcea974a2f5ed63eb8e30a7dcfe661115c25"
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/assets/visual-reference-rater.template.html",
@@ -80,11 +80,11 @@
     },
     {
       "path": "skills/amazon-image-production-runner/SKILL.md",
-      "sha256": "2e69a8373d3a414c399a89a1bec26cbc8f0eada7c6f7a3f2cea5c1dcd2b3243f"
+      "sha256": "d822223a7f4f9157c7f29f726b611d4e65c78d19cdcea8447fd183f8910c588b"
     },
     {
       "path": "skills/amazon-image-production-runner/agents/openai.yaml",
-      "sha256": "f9fcbd7d2a336b6e228d233d456d8e1cc37db4f3f0fb6d38978881d2ee7ddc6f"
+      "sha256": "8cde17bdc0c395ca4f4e223a96c078365022dd248a23222282e1db2b5e584ac7"
     },
     {
       "path": "skills/amazon-image-production-runner/references/agentic_production_contract.md",

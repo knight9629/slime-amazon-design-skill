@@ -3,7 +3,7 @@ name: amazon-image-production-runner
 description: "Use when the Amazon design orchestrator reaches selected-style formal production with a compact context pack, or when the user has already confirmed a selected style and explicitly asks for a complete main-image/A+ production run. Do not use for ordinary 主图+A+ requests that still need research, reference preparation, style comparison, or scope design."
 ---
 
-# 亚马逊完整出图
+# 史莱姆亚马逊设计skill · 完整出图
 
 Skill version: `1.0.0`
 

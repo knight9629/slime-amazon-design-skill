@@ -1,8 +1,8 @@
-# 主图 A+ 设计 Skill 1.0
+# 史莱姆亚马逊设计skill 1.0
 
 面向 Codex 的 Amazon 主图与 A+ 设计工作流。把产品资料、竞品展示分析、参考选择、风格小样、正式生图和质量检查连成一个可以持续推进的任务。
 
-**当前版本：1.0.0** · [下载正式版](https://github.com/knight9629/amazon-main-aplus-design-skill-public/releases/tag/v1.0.0)
+**当前版本：1.0.0** · [下载正式版](https://github.com/knight9629/slime-amazon-design-skill/releases/tag/v1.0.0)
 
 ## 这套 Skill 做什么
 
@@ -40,10 +40,10 @@
 
 ## 安装
 
-下载 Release 中的 ZIP 并解压，或克隆固定版本：
+下载 Release 中的 ZIP 并解压，或克隆当前源码（功能版本仍为 1.0.0）：
 
 ```bash
-git clone --branch v1.0.0 --depth 1 https://github.com/knight9629/amazon-main-aplus-design-skill-public.git
+git clone --branch main --depth 1 https://github.com/knight9629/slime-amazon-design-skill.git
 ```
 
 将 `skills/` 下的两个完整目录安装到 Codex 的技能目录。macOS / Linux 常用路径为 `~/.codex/skills/`；已有同名目录时先备份再更新。
@@ -51,7 +51,7 @@ git clone --branch v1.0.0 --depth 1 https://github.com/knight9629/amazon-main-ap
 也可以打开解压目录，让 Codex 执行：
 
 ```text
-请检查这个主图 A+ 设计 Skill 1.0 包，把 skills 下的两个核心 Skill 安装到我的 Codex 技能目录。
+请检查这个史莱姆亚马逊设计skill 1.0 包，把 skills 下的两个核心 Skill 安装到我的 Codex 技能目录。
 如果已有同名 Skill，先备份；同时检查 README 列出的辅助 Skill 和生图工具依赖，告诉我实际可运行的范围。
 ```
 
@@ -69,7 +69,7 @@ git clone --branch v1.0.0 --depth 1 https://github.com/knight9629/amazon-main-ap
 只做 A+ 时可以明确说：
 
 ```text
-使用主图 A+ 设计 Skill 1.0，只做 A+。先检查我的真实产品资料，
+使用史莱姆亚马逊设计skill 1.0，只做 A+。先检查我的真实产品资料，
 让我选择参考和 A/B/C 风格，再继续正式生产。
 ```
 
