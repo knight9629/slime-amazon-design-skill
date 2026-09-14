@@ -1,0 +1,4 @@
+interface:
+  display_name: "产品参考图库"
+  short_description: "把产品实拍整理成白底参考图库、命名说明和人工检查清单"
+  default_prompt: "Use $product-reference-composer（产品参考图库）to build a white-background product reference library for later Amazon main image and A+ generation."

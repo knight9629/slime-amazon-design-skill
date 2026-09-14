@@ -1,0 +1,4 @@
+interface:
+  display_name: "产品卖点简报"
+  short_description: "融合自家产品信息和竞品逻辑形成图片/A+卖点优先级"
+  default_prompt: "Use $amazon-product-selling-point-brief（产品卖点简报）to handle this task with the Chinese-friendly workflow for 产品卖点简报."

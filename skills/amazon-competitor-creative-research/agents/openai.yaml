@@ -1,0 +1,4 @@
+interface:
+  display_name: "竞品图片卖点分析"
+  short_description: "分析竞品主图、附图和A+的卖点表达与展示优先级"
+  default_prompt: "Use $amazon-competitor-creative-research（竞品图片卖点分析）to handle this task with the Chinese-friendly workflow for 竞品图片卖点分析."

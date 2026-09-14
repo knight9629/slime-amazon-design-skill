@@ -1,0 +1,4 @@
+interface:
+  display_name: "创意风格小样"
+  short_description: "为亚马逊主图和A+推荐风格并生成低成本小样"
+  default_prompt: "Use $amazon-creative-style-sampler（创意风格小样）to handle this task with the Chinese-friendly workflow for 创意风格小样."
