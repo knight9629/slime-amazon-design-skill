@@ -10,11 +10,19 @@ Skill version: `1.0.0`
 
 This is the stable `1.0.0` production runner. Ordinary Amazon main-image/A+ requests enter through `amazon-ai-design-workflow-orchestrator`; this runner requires a confirmed selected-style production context.
 
+## Image model default
+
+`LATEST_IMAGE_MODEL`: inherit the orchestrator's current, officially resolved model and apply the `imagegen` model policy. As checked on `2026-10-15`, the preferred target for product fidelity and precise edits is `gpt-image-2.5-sunburst`; recheck current official image-generation documentation for each new run. `image2`, `provider: image2` and `IMAGE2_PROVENANCE_GATE` are compatibility identifiers, not proof of an actual model version or a ban on newer GPT Image models.
+
+Before dispatch, confirm a supported model-selection parameter or current first-party runtime guarantee. A model name in the prompt cannot choose the backend. If selection or verification is unavailable for the required latest model, report `blocked: model_selection_unavailable`, actual model `unknown`, and verification `unverified`; do not generate, claim an upgrade, downgrade, or silently switch to a paid API. Preserve existing references, approved content, scope and QC gates. Record target/actual model, verification and official source separately from the legacy provider in the existing controller notes; leave old generation records intact.
+
+Inline the resolved model/route and verification state as execution instructions outside the unchanged five-field image packet and outside the image prompt. Every fresh image worker must receive them without reading extra files and return a standard `OTHER` failure with `model_selection_unavailable` if that execution route is unavailable.
+
 ## Goal
 
 Run the formal production step after a style, scope, Product Facts Gate, and compact production context have already been confirmed. The orchestrator should normally invoke this runner inside the same task.
 
-This skill is the exception to the user's ordinary "one final AI image" default. Use it only for a selected-style formal production context or an explicitly confirmed selected-style production run. Route an ordinary `主图+A+` request to `amazon-ai-design-workflow-orchestrator`; use image generation directly for an ordinary one-image task.
+This skill produces a complete multi-image set, so use it only for a selected-style formal production context or an explicitly confirmed selected-style production run. Route an ordinary `主图+A+` request to `amazon-ai-design-workflow-orchestrator`; use image generation directly for an ordinary one-image task.
 
 The stable runner inherits the current full-flow gates: `FULL_FLOW_EXCLUSIVE_CONTROL`, `ONE_MESSAGE_SCOPE_INTAKE`, `REFERENCE_FIDELITY_LOCK`, `VISUAL_PREFERENCE_CALIBRATION`, `IMAGE2_PROVENANCE_GATE`, `CANONICAL_PRODUCTION_PLAN`, `FIXED_THREE_LANE`, `PHASE_BOUNDARY_SCHEDULER`, `DETERMINISTIC_PREFLIGHT`, and the positive creative-direction prompt contract. It may not replace formal generation with brainstorming/HTML, collapse visual/layout preferences into one vague style label, accept style files without `generation_ledger.jsonl`, or treat `OCR_UNAVAILABLE` as text `PASS`.
 
@@ -29,7 +37,7 @@ Before generating, first confirm what the user wants to produce:
 - For Basic A+, the standalone `image_count`.
 - For Premium A+, the `module_count`, `desktop_image_count`, and `mobile_image_count`; exact carousel mapping may stay `DEFERRED_TO_LAYOUT_MATRIX` until layout planning, but must become `RESOLVED` before prompts. Each carousel module can contain 1-5 images.
 
-Do not assume a fixed 7-image main set. Basic A+ has up to 7 standalone images. Premium A+ has up to 7 modules, but carousel modules can make the desktop/mobile image count larger than the module count.
+Do not assume a fixed 7-image main set. Basic A+ has up to 5 standalone images (Amazon's Basic A+ module limit). Premium A+ has up to 7 modules, but carousel modules can make the desktop/mobile image count larger than the module count.
 
 Premium A+ production supports fixed static modules and optional carousel modules. Express every requested Premium A+ idea through those module types before prompt writing.
 
@@ -102,11 +110,11 @@ Before any prompt writing or image generation, apply `ONE_MESSAGE_SCOPE_INTAKE`:
 
 - Main `1:1`: export at the highest practical resolution; recommended minimum `2000x2000`.
 - Main `4:5 portrait`: fixed `4:5`, export at the highest practical resolution; recommended minimum `2000x2500`.
-- Basic A+: fixed `960x600`, up to 7 independent images.
+- Basic A+: fixed `970x600` (Standard Image Header With Text), up to 5 independent images.
 - Premium A+ desktop: fixed `1464x600`, up to 7 modules.
 - Premium A+ mobile: fixed `600x450`, corresponding to Premium A+ modules.
 - Premium carousel module: 1-5 images inside one module, each with matching desktop/mobile outputs when mobile is requested or required by the workflow.
-- `EXACT_RATIO_EXPORT`: Final generated images must have the correct composition and exact target aspect ratio from image2. Stable export may perform deterministic same-aspect resize only; preserve raw sources and never crop, pad, stretch, stitch, composite or rewrite image content. Any ratio mismatch requires image2 rework.
+- `BOUNDED_RATIO_EXPORT`: final files have the exact target pixel size and the composition must come from image2. The image tool returns a fixed pixel budget, so raws land slightly off non-square targets (for example `1122x1402` for 4:5, `1959x803` for `1464x600`). When the raw aspect ratio is within 1% of the target, export resamples it directly to the exact size (an invisible sub-1% scale difference) and records it in `dimension_corrections`; same-aspect raws are simply resized. A raw more than 1% off requires image2 rework. Preserve raw sources and never crop, pad, visibly stretch, stitch, composite or rewrite image content.
 
 ## Main 4:5 Image2 Ratio Prompt Rule
 
@@ -126,11 +134,11 @@ The image must not be square, not 3:4, not 2:3, not 9:16, and not horizontal.
 ```
 
 - Do not rely on soft wording such as `vertical product card`, `balanced portrait`, or `not a narrow poster` by itself.
-- After image2 returns a raw file, verify pixel dimensions, exact aspect ratio, and visual integrity. Any ratio mismatch must be reworked through image2; never crop, pad, stretch, stitch or compose a wrong image into `4:5`.
+- After image2 returns a raw file, verify pixel dimensions, aspect ratio, and visual integrity. A raw within 1% of `4:5` (such as `1122x1402`) exports under `BOUNDED_RATIO_EXPORT`; a larger ratio error must be reworked through image2. Never crop, pad, stretch, stitch or compose a wrong image into `4:5`.
 
 ## Output Folders
 
-Create one folder per selected style. Use these subfolders:
+Create one folder per selected style at `<run_output_root>/full_production/<style>/` (from `active_run.json`), so the state script sees production files. Use these subfolders:
 
 - `prompts`
 - `raw_generated`
@@ -165,7 +173,7 @@ Formal production must pass real image evidence through a supported visual-input
    - Keep the style name, inherited `Style Spec`, and strategic role in the prompt document.
 
 2. Read upstream artifacts.
-   - Standard white-background product reference image: shape, color, lens, stand, ports, material, visible accessories.
+   - Standard white-background product reference image: shape, proportions, color, material, distinctive structures (for example controls, ports, lens, stand, hinges), and visible accessories.
    - Local detail locks: high-risk buttons/knobs, grilles, logos, ports, hinges, labels, accessories, package contents, and forbidden distortions.
    - Product brief: confirmed selling points, risky claims, main image logic, A+ logic.
    - Category design playbook match from the product brief: selected playbook, confidence, category image tasks, buyer results, proof methods, human-presence guidance, and rejected playbooks.
@@ -271,7 +279,7 @@ Formal production must pass real image evidence through a supported visual-input
    - Do not assign two workers the same `slot_id` or canonical raw filename.
 
 9. Run batch image QC before export.
-   - First run `scripts/preflight_qc.py` and write `preview/preflight_qc.json`. Check files, hashes, dimensions and expected raster copy before visual QC. Stable export requires exact raw aspect ratios; preflight rejects any ratio mismatch and returns that slot to image2.
+   - First run `scripts/preflight_qc.py` and write `preview/preflight_qc.json`. Check files, hashes, dimensions and expected raster copy before visual QC. Under `BOUNDED_RATIO_EXPORT`, same-aspect raws become `SAME_ASPECT_RESIZE_REQUIRED`, raws within 1% of the target ratio become `SMALL_RATIO_CORRECTION_CANDIDATE` (both route to visual QC), and a larger ratio error fails and returns that slot to image2.
    - If the OCR executable is absent or fails, record `OCR_UNAVAILABLE` / `OCR_ERROR`, set `requires_visual_qc`, and continue to visual copy review. Never convert missing OCR evidence into `PASS` or `PASS_WITH_NOTES`.
    - Write exactly three machine profiles: `preview/qc_product_structure.json`, `preview/qc_copy_style.json`, and `preview/qc_technical.json`. Each must reference the current `preflight_qc.json` hash and cover every planned slot.
    - The controller writes `preview/main_batch_qc_verdict.json` and/or `preview/aplus_batch_qc_verdict.json`; every verdict references all three profile paths/hashes and merges their exact failed slot ids and blocking findings.
@@ -282,9 +290,9 @@ Formal production must pass real image evidence through a supported visual-input
    - `GENERATION_FIRST_QC_AFTER`: only after the full raw set and preflight exist, run exactly three parallel read-only `QC_WORKER` tasks: product truth/structure; copy/style/visual selling; aspect/dimensions/technical. Their reports are evidence; the controller writes the authoritative MAIN/A+ batch verdicts.
    - Failed slots may be reworked in parallel only when their write paths are unique. Keep a maximum of two controlled rounds per repeated QC problem.
 
-10. Postprocess locally only for deterministic exact-ratio export.
-   - Local tools may create contact sheets, manifests and same-aspect resizing. The raw ratio must already exactly match the target; the previous 0.6.11 bounded-ratio correction is not supported by this stable exporter.
-   - Preserve every raw source. Do not crop, pad, stretch, stitch, manually composite, replace text or change layout.
+10. Postprocess locally only for deterministic exact-size export.
+   - Local tools may create contact sheets, manifests and resizing to the exact target pixels. `BOUNDED_RATIO_EXPORT` accepts a raw within 1% of the target ratio and records each such resample in `dimension_corrections`; a larger error needs image2 rework.
+   - Preserve every raw source. Do not crop, pad, visibly stretch, stitch, manually composite, replace text or change layout.
    - If ratio, crop, text placement or visual integrity is wrong, rework only the failed slot through image2.
    - Use `scripts/postprocess_images.py` with the confirmed counts, or `--slot-manifest` for explicit carousel slots. Do not combine the two input modes. See `references/slot_manifest_contract.md` for command and schema.
 
@@ -299,14 +307,14 @@ Build the slot list after the user confirms the requested deliverables and count
 
 ### Main Image Slot Pool
 
-Choose only as many as the user requested:
+Choose only as many as the user requested, and name each slot from the current product brief and matched category playbook rather than copying this list:
 
 1. White-background hero product image.
 2. Core conversion selling point image.
-3. Smart system or built-in content image, only if confirmed.
-4. Picture quality image.
-5. Setup, adjustment, support, placement, or operation image; depict only mechanisms and automation explicitly confirmed for the current product.
-6. Connectivity and compatibility image.
+3. Key function, mechanism, or system proof, only if confirmed (for example a smart system, app, or built-in content).
+4. Performance or result proof for the product's main benefit (for example picture quality, airflow, capacity, comfort, or cleaning result).
+5. Setup, adjustment, support, placement, size, or operation image; depict only mechanisms and automation explicitly confirmed for the current product.
+6. Compatibility, accessory, or material/detail proof, only when relevant to this category.
 7. Scenario, package, service, or differentiator image.
 
 ### Main Image Format Variants
@@ -318,12 +326,12 @@ Use this distinction throughout planning, prompting, and export:
 - When both formats are requested, do not mechanically crop every `1:1` image. Create format-specific compositions for text-heavy, lifestyle, comparison, and infographic slots.
 - The first MAIN image should remain product-only and square unless the user explicitly chooses otherwise.
 
-### Basic A+ Rules, `960x600`
+### Basic A+ Rules, `970x600`
 
 Use when the user chooses Basic A+:
 
-- Fixed output size: `960x600`.
-- Maximum: 7 independent images.
+- Fixed output size: `970x600`, the full-width Standard Image Header With Text module.
+- Maximum: 5 independent images, Amazon's Basic A+ module limit.
 - Do not plan Amazon module templates for Basic A+; treat it as a sequence of standalone images.
 - Choose only as many images as the user requested.
 
@@ -355,16 +363,16 @@ Always include these constraints when relevant:
 
 - When a slot shows product (`P1`-`P4`), use the standard white-background product reference image as the single source of product form.
 - When a slot shows product (`P1`-`P4`), pass that exact local source through `DIRECT_IMAGE_INPUT`; use adjacent `view_image` relay only as fallback. Path text or Markdown display is not enough.
-- Preserve actual product body, lens, stand, ports, logo area, materials, and distinctive structure.
+- Preserve the actual product body, silhouette, proportions, logo area, materials, and distinctive structures (for example controls, ports, lens, stand, hinges, seams).
 - Preserve local detail locks exactly when visible; do not let image2 reinterpret a locked button, knob, grille, logo, port, hinge, label, or package item.
 - Apply category-specific physical and compliance constraints only when supported by the current product truth, matched playbook, or confirmed brief; do not carry another SKU's constraints into this run.
-- Do not imply built-in battery or cordless outdoor use unless confirmed in the product brief.
+- Do not imply a power source, built-in battery, cordless or outdoor use, waterproofing, or other capability unless confirmed in the product brief.
 - Do not invent accessories, cables, handles, buttons, ports, screens, apps, or package contents.
-- Do not use unauthorized platform logos, certification badges, Dolby/Hi-Res/HDR/ANSI claims, or official authorization claims unless confirmed.
+- Do not use unauthorized platform logos, certification badges, licensed technology marks or standards claims (for example Dolby, HDR, ANSI, FDA, UL), or official authorization claims unless confirmed.
 - Put the required text, parameters, icons, badge intent, and layout hierarchy directly into the image2 prompt by default.
 - Main image white-background slot must stay product-centered, clean, and Amazon-safe.
 - Main `4:5 portrait` prompts must apply the Main 4:5 Image2 Ratio Prompt Rule.
-- Final composition and exact aspect ratio must come from image2. Exact pixels may come from same-aspect resize; local crop, pad, stretch, stitching, manual compositing or resizing to hide a failure is forbidden.
+- Final composition and an aspect ratio within 1% of the target must come from image2. Exact pixels may come from the `BOUNDED_RATIO_EXPORT` resize; local crop, pad, visible stretch, stitching, manual compositing or resizing to hide a larger failure is forbidden.
 
 ## Prompt Preflight Check
 
@@ -585,7 +593,7 @@ Use this structure by default:
 
 ...
 
-## Basic A+ Images, 960x600
+## Basic A+ Images, 970x600
 ### aplus_basic_01_raw.png
 - Purpose:
 - Prompt:
@@ -619,7 +627,21 @@ Use this structure by default:
 
 ## Postprocess Script
 
-For Premium carousel slides or explicit slot names, use the `--slot-manifest` command from `references/slot_manifest_contract.md`. For a sequential count-based set, run:
+For Premium carousel slides or explicit slot names, use the `--slot-manifest` command from `references/slot_manifest_contract.md`. For a sequential count-based set, run (macOS / Linux):
+
+```bash
+PYTHONUTF8=1 python3 '<skill-dir>/scripts/postprocess_images.py' \
+  --base-dir '<style-output-folder>' \
+  --main-count '<main-count>' \
+  --main-portrait-count '<portrait-main-count>' \
+  --basic-aplus-count '<basic-aplus-count>' \
+  --premium-aplus-desktop-count '<premium-desktop-count>' \
+  --premium-aplus-mobile-count '<premium-mobile-count>' \
+  --main-size 2000 2000 \
+  --main-portrait-size 2000 2500
+```
+
+Windows PowerShell:
 
 ```powershell
 $env:PYTHONUTF8='1'
@@ -640,7 +662,7 @@ It writes:
 
 - `main_1x1/main_01_1x1.png` ... based on the requested count
 - `main_portrait/main_portrait_01_<width>x<height>.png` ... for `4:5` portrait main images
-- `a_plus_basic/aplus_basic_01_960x600.png` ... for Basic A+
+- `a_plus_basic/aplus_basic_01_970x600.png` ... for Basic A+
 - `a_plus_premium_desktop/aplus_premium_desktop_01_1464x600.png` ... for Premium A+ desktop
 - `a_plus_premium_mobile/aplus_premium_mobile_01_600x450.png` ... for Premium A+ mobile
 - `preview/main_contact_sheet.png`
@@ -648,6 +670,6 @@ It writes:
 - A+ contact sheets for each requested A+ group
 - `preview/production_manifest.json`
 
-Use the user-confirmed scope. Basic A+ is fixed `960x600` and remains limited to 7 standalone images. Premium A+ desktop is fixed `1464x600`; Premium A+ mobile is fixed `600x450`.
+Use the user-confirmed scope. Basic A+ is fixed `970x600` and limited to 5 standalone images. Premium A+ desktop is fixed `1464x600`; Premium A+ mobile is fixed `600x450`.
 
-`preview/production_manifest.json` is written only when every requested output is present, exported at the exact target ratio, and recorded with its SHA-256 hash. Any missing or rework-required slot writes `preview/partial_production_manifest.json` instead and must not be reported as complete.
+`preview/production_manifest.json` is written only when every requested output is present, exported at the exact target size within the `BOUNDED_RATIO_EXPORT` limit, and recorded with its SHA-256 hash; any within-limit resample is listed under `dimension_corrections`. Any missing or rework-required slot writes `preview/partial_production_manifest.json` instead and must not be reported as complete.

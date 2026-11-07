@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import struct
 import tempfile
 from datetime import datetime
@@ -13,8 +14,22 @@ from typing import Any
 
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+# Camera/phone formats the workflow cannot read; they are reported for conversion.
+CONVERTIBLE_PHOTO_EXTENSIONS = {".heic", ".heif", ".avif", ".tif", ".tiff", ".dng"}
 SKIP_DIRS = {".git", "__pycache__", "node_modules", "raw_generated", "preview", "workers"}
-SOURCE_MARKERS = {"产品", "拍摄", "实拍", "photo", "source", "reference", "素材"}
+SOURCE_MARKERS = {
+    "产品", "拍摄", "实拍", "实物", "原图", "素材",
+    "photo", "source", "reference", "product", "img_", "dsc",
+}
+# Competitor evidence, design inspiration and workflow outputs are never product photos.
+NON_SOURCE_MARKERS = {
+    "竞品", "competitor", "大牌", "案例", "灵感", "inspiration",
+    "输出", "output", "白底", "white_bg", "white-bg", "white-background", "white_background",
+    "参考图库", "reference_library", "style_samples", "quick_samples", "小样",
+    "main_1x1", "main_portrait", "a_plus",
+}
+COMPETITOR_MARKERS = ("竞品", "competitor")
+RUN_OUTPUT_PARENT = "输出"
 WORKFLOW_VERSION = "1.0.0"
 
 
@@ -67,27 +82,93 @@ def relative_path(root: Path, path: Path) -> str:
     return path.resolve().relative_to(root.resolve()).as_posix()
 
 
-def source_candidates(root: Path) -> list[Path]:
-    candidates: list[Path] = []
+def project_files(root: Path, extensions: set[str]) -> list[Path]:
+    """Files under the project, matched on their project-relative path only.
+
+    Folder names above the project root (for example ~/亚马逊产品项目/) must never
+    decide what a file is.
+    """
+    matches: list[Path] = []
     for path in root.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in IMAGE_EXTENSIONS:
+        if not path.is_file() or path.suffix.lower() not in extensions:
             continue
         relative_parts = path.relative_to(root).parts
-        if any(part in SKIP_DIRS for part in relative_parts):
+        if any(part in SKIP_DIRS or part.startswith(".") for part in relative_parts):
             continue
-        lowered = path.as_posix().lower()
-        if any(marker in lowered for marker in SOURCE_MARKERS):
-            candidates.append(path)
-    return sorted(candidates)
+        matches.append(path)
+    return sorted(matches)
+
+
+def has_marker(root: Path, path: Path, markers: set[str] | tuple[str, ...]) -> bool:
+    lowered = path.relative_to(root).as_posix().lower()
+    return any(marker in lowered for marker in markers)
+
+
+def source_candidates(root: Path) -> tuple[list[Path], str]:
+    images = [
+        path
+        for path in project_files(root, IMAGE_EXTENSIONS)
+        if not has_marker(root, path, NON_SOURCE_MARKERS)
+    ]
+    marked = [path for path in images if has_marker(root, path, SOURCE_MARKERS)]
+    if marked:
+        return marked, "MARKED_SOURCE_PATHS"
+    if images:
+        return images, "FALLBACK_ALL_PROJECT_IMAGES"
+    return [], "NO_SUPPORTED_PHOTOS"
+
+
+def convertible_photos(root: Path) -> list[Path]:
+    return [
+        path
+        for path in project_files(root, CONVERTIBLE_PHOTO_EXTENSIONS)
+        if not has_marker(root, path, NON_SOURCE_MARKERS)
+    ]
 
 
 def competitor_archives(root: Path) -> list[Path]:
-    return sorted(
+    return [
         path
-        for path in root.rglob("*.zip")
-        if path.is_file()
-        and any(marker in path.as_posix().lower() for marker in ("竞品", "competitor"))
-    )
+        for path in project_files(root, {".zip"})
+        if has_marker(root, path, COMPETITOR_MARKERS)
+    ]
+
+
+def competitor_evidence_folders(root: Path) -> set[str]:
+    """Folders of competitor screenshots/archives, registered so the scanner sees them."""
+    return {
+        relative_path(root, path.parent)
+        for path in project_files(root, IMAGE_EXTENSIONS | {".zip", ".pdf"})
+        if has_marker(root, path, COMPETITOR_MARKERS) and path.parent != root
+    }
+
+
+def run_output_folder(run_identity: str) -> str:
+    safe = re.sub(r'[\\/:*?"<>|\s]+', "-", run_identity).strip(".-") or "run"
+    return f"{RUN_OUTPUT_PARENT}/{safe}"
+
+
+def source_detection_warnings(source_detection: str, convertible: list[str]) -> list[str]:
+    warnings: list[str] = []
+    if source_detection == "FALLBACK_ALL_PROJECT_IMAGES":
+        warnings.append(
+            "No folder or file name marked the product photos, so every non-competitor "
+            "image was inventoried. Confirm with the user which images are the real "
+            "product photos before writing reference_strategy.json."
+        )
+    elif source_detection == "NO_SUPPORTED_PHOTOS":
+        warnings.append(
+            "No .jpg/.jpeg/.png/.webp product photos were found. Ask the user for the "
+            "real product photo folder."
+        )
+    if convertible:
+        warnings.append(
+            f"{len(convertible)} photo(s) use a format this workflow cannot read "
+            f"(for example {convertible[0]}). Convert them to JPEG first, e.g. on macOS: "
+            "sips -s format jpeg <photo.heic> --out <photo.jpg>; then rerun bootstrap "
+            "with the same run identity."
+        )
+    return warnings
 
 
 def initialize_run(root: Path, run_identity: str, *, overwrite: bool = False) -> dict[str, Any]:
@@ -106,8 +187,11 @@ def initialize_run(root: Path, run_identity: str, *, overwrite: bool = False) ->
                 "active_run.json already belongs to another run; use --overwrite explicitly"
             )
 
+    sources, source_detection = source_candidates(root)
+    convertible = [relative_path(root, path) for path in convertible_photos(root)]
+    warnings = source_detection_warnings(source_detection, convertible)
     images: list[dict[str, Any]] = []
-    for path in source_candidates(root):
+    for path in sources:
         width, height, dimensions_error = image_dimensions(path)
         images.append(
             {
@@ -128,12 +212,18 @@ def initialize_run(root: Path, run_identity: str, *, overwrite: bool = False) ->
         for path in competitor_archives(root)
     ]
     now = datetime.now().isoformat(timespec="seconds")
+    # Every generated artifact of this run lives under one registered folder, so the
+    # state scanner sees new references, samples and outputs without old runs.
+    run_output_root = run_output_folder(run_identity)
+    (root / run_output_root).mkdir(parents=True, exist_ok=True)
     active_paths = sorted(
         {
             str(Path(item["path"]).parent.as_posix())
             for item in images + archives
             if Path(item["path"]).parent.as_posix() != "."
         }
+        | competitor_evidence_folders(root)
+        | {run_output_root}
     )
     active = {
         "version": 1,
@@ -141,6 +231,7 @@ def initialize_run(root: Path, run_identity: str, *, overwrite: bool = False) ->
         "run_identity": run_identity,
         "created_at": now,
         "active_paths": active_paths,
+        "run_output_root": run_output_root,
         "include_root_files": True,
         "scoped": True,
     }
@@ -148,7 +239,9 @@ def initialize_run(root: Path, run_identity: str, *, overwrite: bool = False) ->
         "version": 1,
         "run_identity": run_identity,
         "generated_at": now,
+        "source_detection": source_detection,
         "images": images,
+        "convertible_photos": convertible,
     }
     zip_inventory = {
         "version": 1,
@@ -171,9 +264,36 @@ def initialize_run(root: Path, run_identity: str, *, overwrite: bool = False) ->
     return {
         "run_identity": run_identity,
         "source_count": len(images),
+        "source_detection": source_detection,
         "competitor_zip_count": len(archives),
         "active_paths": active_paths,
+        "run_output_root": run_output_root,
+        "warnings": warnings,
     }
+
+
+def add_active_path(root: Path, folder: str) -> dict[str, Any]:
+    """Register an existing project folder that holds current-run artifacts."""
+    root = root.expanduser().resolve()
+    active_path = root / "active_run.json"
+    if not active_path.is_file():
+        raise ValueError("active_run.json is missing; run bootstrap with --run-identity first")
+    data = json.loads(active_path.read_text(encoding="utf-8"))
+    target = (root / folder).resolve()
+    try:
+        value = target.relative_to(root).as_posix()
+    except ValueError as exc:
+        raise ValueError(f"active path escapes project root: {folder}") from exc
+    if value == ".":
+        raise ValueError("register a subfolder, not the project root")
+    if not target.is_dir():
+        raise ValueError(f"active path is not an existing folder: {folder}")
+    paths = [str(item) for item in data.get("active_paths", []) if str(item).strip()]
+    if value not in paths:
+        paths.append(value)
+    data["active_paths"] = sorted(paths)
+    atomic_write_json(active_path, data)
+    return {"run_identity": data.get("run_identity"), "active_paths": data["active_paths"]}
 
 
 def write_scope_atomic(root: Path, scope: dict[str, Any]) -> Path:
@@ -206,8 +326,15 @@ def main() -> int:
     parser.add_argument("--run-identity")
     parser.add_argument("--scope-json", type=Path)
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--add-active-path",
+        help="Register an existing project folder that holds current-run artifacts.",
+    )
     args = parser.parse_args()
     root = args.project_root.expanduser().resolve()
+    if args.add_active_path:
+        print(json.dumps(add_active_path(root, args.add_active_path), ensure_ascii=False, indent=2))
+        return 0
     if args.scope_json:
         scope = json.loads(args.scope_json.read_text(encoding="utf-8"))
         print(write_scope_atomic(root, scope))

@@ -10,11 +10,19 @@ Skill version: `1.0.0`
 
 This is the stable `1.0.0` release and the default for ordinary Amazon main-image/A+ requests.
 
+## Image model default
+
+`LATEST_IMAGE_MODEL`: apply the `imagegen` model policy before generation. Resolve the newest stable model from current official image-generation documentation at the start of a run; as checked on `2026-10-15`, prefer `gpt-image-2.5-sunburst` for product fidelity and precise edits. Keep that selection for the run and recheck for a new run. `image2`, `provider: image2` and `IMAGE2_PROVENANCE_GATE` are compatibility identifiers, not a model-version pin; they allow a newer model on the same supported route.
+
+Select the model through a supported execution parameter or verify a current first-party runtime guarantee. Prompt text cannot select a backend. If the required latest model cannot be selected or verified, report `blocked: model_selection_unavailable` before generation; record actual model `unknown` and verification `unverified`, and do not claim an upgrade. A latest-model preference does not authorize a new paid API route or spending. Preserve current product, reference, copy, scope and QC gates and all historical generation records.
+
+The controller records target model, actual model when exposed, verification status and official source in the existing run notes, separately from provider. Before dispatch, inline the resolved model/route and verification state as execution instructions outside the five-field image packet and outside the image prompt. Fresh workers must receive these instructions without reading extra files; if they cannot execute the verified route, they return a standard `OTHER` failure with `model_selection_unavailable`. Do not dispatch an unverified route to satisfy a strict latest-model requirement.
+
 ## Goal
 
 Act as the full-flow controller for Amazon main-image and A+ production.
 
-Calling this skill means `FULL_FLOW` by default. Use `QUICK_TASK` only when the user explicitly asks for a sample, test image, first-screen test, or an ordinary 1-3 image task. A quick task stays in the current task and does not count as full-flow progress.
+Calling this skill for a new image set means `FULL_FLOW` by default. Directed edits to an approved existing baseline follow `SCOPED_REVISION` below. Use `QUICK_TASK` only when the user explicitly asks for a sample, test image, first-screen test, or an ordinary 1-3 image task. A quick task stays in the current task and does not count as full-flow progress.
 
 `FULL_FLOW_EXCLUSIVE_CONTROL`: once a request enters `FULL_FLOW`, generic brainstorming, visual-companion pages, HTML/CSS mockups, and nearby helper workflows may not replace, pause, or relabel the state machine unless the user explicitly requests that separate artifact. “先出样” under time pressure does not silently convert an already-invoked full run into `QUICK_TASK`.
 
@@ -24,7 +32,7 @@ The controller must:
 - ask only for missing production-scope fields;
 - protect product truth and local details before style;
 - generate at least three white-background reference images from the photographed product images at the beginning of the workflow;
-- stop at a dynamic Product Facts Gate before big-brand research, style samples, or full production;
+- resolve a dynamic Product Facts Gate before big-brand research, style samples, or full production, asking only about remaining blocking facts;
 - use the lightest valid reference route;
 - research competitors and current big-brand cases for every product;
 - find references by visual/layout purpose, reuse explicitly liked favorites, and refresh rejected candidates with minimal user input;
@@ -61,6 +69,16 @@ Use only when the user explicitly asks for `样张`, `小样`, `测试图`, `先
 - Do not require competitor research, big-brand research, full matrix, batch worker packets, worker reports, or production manifests unless the user explicitly expands the task.
 - Keep product-truth, reference selection, image2 route, and image QC safeguards.
 - Do not mark quick-task artifacts as full-flow progress.
+
+### Scoped revisions and continuation
+
+- `SCOPED_REVISION`: a directed edit to an existing same-scope approved baseline is a revision of that artifact, not a new `FULL_FLOW` run or a new machine state. Reuse unchanged, still-valid evidence, research and approvals; do not restart competitor research, three-style selection or whole-set generation. Check the changed slots and any affected shared copy/layout, then compare preserved items against the baseline. Missing facts or a material scope/style/method change reopen only the affected gate. Record the actual revision and its QA; formal manifest/export gates still require their real evidence, and a standalone revision cannot be claimed as a newly completed formal run.
+- `SAME_SCOPE_CONFIRMATION`: reuse explicit decisions and approvals for the same product/variant, artifact, scope and unchanged evidence. Record their source in the existing decision files; a new turn or resumed task does not require another approval. A changed product fact, source hash, scope or style reopens only the affected gate. File existence alone is not approval; transfer a decision across branches only when the user's instruction clearly applies it to the receiving scope.
+- `BASELINE_PRESERVING_EDIT`: before a directed edit, identify the approved baseline, target slots/regions, requested changes and preserved items in the existing plan or revision note. Keep a recoverable baseline and preserve module/image order, accepted copy, Q&A, layout and non-target images unless the user asks to change them. Do not rebuild the full set for a local correction.
+- `ARTIFACT_SCOPED_METHOD`: bind an explicit AI, model-rendering or Photoshop instruction to the named artifact and branch. A model/PS instruction for the white-background MAIN image does not govern the other images; an AI-led secondary-image instruction does not change the MAIN route. Carry the scoped method into the relevant worker input. Deliver an explicitly requested non-image2 route as a separately identified artifact outside the formal image2 runner/exporter, retaining product truth, visual approval, authorization, target dimensions and content QC. Record its actual method and QA result; never fabricate image2 provenance or use it to claim unsupported formal pipeline gates passed.
+- `BRANCH_OUTPUT_ISOLATION`: give concurrent variants separate output/revision directories and write ownership. Shared approved inputs may be reused read-only; one branch cannot overwrite another branch's images, scripts, plan or canonical state. When independent runs need separate state, give each a separate run root.
+- `SHARED_GUI_SERIALIZATION`: file isolation alone does not make a shared Photoshop, Blender or browser session independent. Coordinate one active operator and an explicit handoff before switching; parallelize work only while it uses independent control surfaces.
+- `BASELINE_ROLLBACK`: restore the user's specified version or another unambiguous recorded baseline, including its exact slot order and copy. If the intended baseline cannot be identified, ask only for that missing choice; do not combine versions, infer the baseline from the newest folder, or reintroduce removed content outside the requested rollback scope. Local revision approval does not by itself authorize a backend write or publication.
 
 ## Agentic Execution Model
 
@@ -110,12 +128,12 @@ Parallel work never weakens the Human Gates, Product Facts Gate, visual-input ga
 
 ### 1.0.0 Machine Gates
 
-- `ONE_MESSAGE_SCOPE_INTAKE`: run `scripts/bootstrap_run.py` once to create `active_run.json`, `source_inventory.json`, `competitor_zip_inventory.json`, and `production_scope.template.json`. Ask every missing scope field in one consolidated message. After the answer, validate all enabled counts/formats and atomically write `production_scope.json`; invalid data must not touch the canonical file.
+- `ONE_MESSAGE_SCOPE_INTAKE`: run `scripts/bootstrap_run.py` once to create `active_run.json`, `source_inventory.json`, `competitor_zip_inventory.json`, `production_scope.template.json`, and the registered run output folder `run_output_root`. Relay its `warnings` (unmarked photo folders, `.HEIC` or other photos to convert) to the user before relying on the inventory. Ask every missing scope field in one consolidated message. After the answer, validate all enabled counts/formats and atomically write `production_scope.json`; invalid data must not touch the canonical file.
 - `REFERENCE_FIDELITY_LOCK`: after `reference_strategy.json`, hash-bind the lightweight structural `must_preserve` and `forbidden_drift` rules in `reference_fidelity_lock.json` before generating any white-background reference. Every selected source needs at least one lock row.
 - `VISUAL_PREFERENCE_CALIBRATION`: follow `references/reference_discovery.md` v2. AI searches by purpose, tries the curated library first, inspects and deduplicates candidates, then presents source-visible images through `build_visual_reference_rater.py`. Show only applicable visual/layout buttons: 喜欢 / 一般 / 不喜欢. `reference_discovery.py submit` validates a button payload; `chat-submit` accepts an explicit current-batch chat action and named sample/axis choices with the exact user words. Both bind the pending pool SHA-256 and round. `NATIVE_CHAT_FEEDBACK` never requires repeating an already explicit choice by clicking buttons. `CONTINUE` yields `RATED` only when both visual and layout have a positive anchor; the controller then writes the hash-bound profile; otherwise it enters `RESEARCH_REQUIRED`. `RESEARCH_ALL` replaces the batch; `RESEARCH_REJECTED` retains explicit likes and replaces the remainder. Do not require manual image explanations, module assignment, profile approval, fixed source quotas, numeric AI scores, complete-project role counts, or an extra generated pairwise round.
 - `IMAGE2_PROVENANCE_GATE`: append every real image2 call to `generation_ledger.jsonl` with run/stage/slot, route, prompt hash, exact reference paths and hashes, timestamps, elapsed time, output dimensions/path/hash, and status. A/B/C filenames without matching successful image2 evidence do not unlock style choice; each `STYLE_SAMPLES` success must also bind the current `visual_preference_profile_sha256`.
 - `CANONICAL_PRODUCTION_PLAN`: `production_plan.json` is the single production source for slot facts, sizes, prompts, expected copy, references, task duration, and independence. It must bind the current `visual_preference_profile_sha256`. Run `scripts/derive_production_artifacts.py`; matrix, prompt document, worker packet/report templates, registry template, and preflight spec are derived outputs, not separate facts to maintain by hand.
-- `DETERMINISTIC_PREFLIGHT`: run `scripts/preflight_qc.py` before finished-image model/visual QC. It checks file existence, hashes, exact dimensions, exact raw aspect ratio, and expected raster text. `OCR_UNAVAILABLE` or OCR execution failure means `NEEDS_VISUAL_QC`; it is never a text `PASS`.
+- `DETERMINISTIC_PREFLIGHT`: run `scripts/preflight_qc.py` before finished-image model/visual QC. It checks file existence, hashes, dimensions, the `BOUNDED_RATIO_EXPORT` raw aspect-ratio limit, and expected raster text. `OCR_UNAVAILABLE` or OCR execution failure means `NEEDS_VISUAL_QC`; it is never a text `PASS`.
 - `SCHEDULER_STATE_GATE`: `scheduler_state.json` must match the active `run_identity`, declare `PHASE_BOUNDARY_SCHEDULER`, and recommend 1-3 child workers. The normal generation recommendation is 3; only a material transport error may temporarily reduce it.
 - `MACHINE_QC_GATE`: require `preview/qc_product_structure.json`, `preview/qc_copy_style.json`, and `preview/qc_technical.json`, followed by `preview/main_batch_qc_verdict.json` and/or `preview/aplus_batch_qc_verdict.json`. Every file is bound to the current `preflight_qc.json` hash.
 
@@ -123,12 +141,13 @@ Parallel work never weakens the Human Gates, Product Facts Gate, visual-input ga
 
 - Preferred formal route: `DIRECT_IMAGE_INPUT`. Pass the exact selected local source/reference paths to the image-generation call through its native referenced-image input, and keep the subset minimal. Local paths written only inside prompt text do not count.
 - Inspect every selected local image before its first use. For multiple references, declare each role and identify the controlling product reference; product truth and local-detail sources outrank style references.
+- Keep structural evidence separate from style references: real product photos and verified source details control geometry, ports, texture boundaries and materials; design references control composition, lighting and typography. A generated image or render shadow is not evidence of a physical feature. Resolve unclear geometry from the relevant real view before depicting it.
 - Fallback route: use `VISUAL_CONTEXT_RELAY` only when native referenced-image attachment is unavailable. Immediately inspect/load the exact source with `view_image`, call image generation next, and include the fail-fast canary `NO VIEW_IMAGE INPUT`.
 - For a matrix-approved `P0` no-product slot, state that no product reference is used. Attach a non-product scene/style reference only when it materially controls the result.
 - `TEXT_ONLY`, Markdown embeds, filenames alone, prompt-only path strings, old chat memory, old screenshots, and text links are not valid product-reference authority for formal output.
-- Do not substitute other generative routes such as PPT, HTML/CSS, Python canvas, Photoshop generative tools, Stable Diffusion, Midjourney, browser image tools, or manual compositing.
-- Local scripts are allowed only for deterministic contact sheets, size checks, same-aspect resizing, previews, manifests, checkpoints, and packaging.
-- `EXACT_RATIO_EXPORT`: stable export requires the raw image to have the exact target aspect ratio. Deterministic same-aspect resize is allowed; crop, pad, stretch, stitching, compositing, or content rewriting is forbidden. Any ratio mismatch returns that slot to image2. The previous 0.6.11 bounded-ratio correction is not supported by this exporter.
+- For the default formal image2 route, do not substitute other generative routes such as PPT, HTML/CSS, Python canvas, Photoshop generative tools, Stable Diffusion, Midjourney, browser image tools, or manual compositing. Explicit user-requested alternatives follow `ARTIFACT_SCOPED_METHOD` for the named output only.
+- For that default route, local scripts are allowed only for deterministic contact sheets, size checks, same-aspect resizing, previews, manifests, checkpoints, and packaging.
+- `BOUNDED_RATIO_EXPORT`: every exported file has the exact target pixel size. The image tool returns a fixed pixel budget, so raw files land slightly off non-square targets (for example `1122x1402` for 4:5 or `1959x803` for `1464x600`). A raw whose aspect ratio is within 1% of the target is resampled directly to the exact size and recorded in `dimension_corrections`; same-aspect raws are simply resized. A raw more than 1% off returns that slot to image2. Crop, pad, visible stretch, stitching, compositing, or content rewriting stay forbidden.
 - For every `4:5 portrait` main-image prompt, apply the stable runner version `1.0.0` Main 4:5 Image2 Ratio Prompt Rule. This improves raw `4:5` compliance but does not guarantee exact pixels, so raw dimensions still require QC.
 - Product truth and confirmed local details outrank style, competitor claims, and category playbooks.
 - Do not invent specifications, accessories, ports, controls, screens, apps, package contents, certifications, logos, authorization claims, or unconfirmed capabilities.
@@ -157,11 +176,13 @@ Parallel work never weakens the Human Gates, Product Facts Gate, visual-input ga
 
 ## Human Gates
 
+Apply `SAME_SCOPE_CONFIRMATION` before asking: valid current-scope reference approval, fact confirmation and style choice satisfy their respective gates. Do not infer an aesthetic choice or external-action authorization from product evidence or silence.
+
 Stop only at these points:
 
 1. Required production scope is missing.
 2. A three-image or larger white-background reference set has passed automated QC and needs user approval.
-3. Critical product facts are missing or not explicitly confirmed for the current product category.
+3. Critical product facts remain missing, contradictory, or require explicit confirmation for the current product category.
 4. The user gives simple applicable-purpose ratings, continues with liked references, or asks for all/rejected candidates to be replaced; no written reason or per-image module assignment is required.
 5. The user must choose one of the three profile-constrained style samples.
 6. Product credibility and selling-point clarity pass, but the user must decide whether visual-impact-only rework is worth another generation.
@@ -214,7 +235,7 @@ Reference-library rule:
 Read `references/production_scope_contract.md` for the stable schema. Use `ONE_MESSAGE_SCOPE_INTAKE`: run `scripts/bootstrap_run.py --project-root <root> --run-identity <id>`, ask only the missing fields together, then validate and atomically write `production_scope.json`; its template is not valid scope evidence.
 
 - Single-ratio main images use `main.count`; both `1:1` and `4:5` require separate `main.count_by_ratio` values, with no ambiguous shared count.
-- Basic A+ uses `image_count`, up to 7 standalone `960x600` images.
+- Basic A+ uses `image_count`, up to 5 standalone `970x600` images (Amazon Basic A+ allows at most 5 modules; each full-width Standard Image Header With Text is `970x600`).
 - Premium A+ records `module_count`, `desktop_image_count`, and `mobile_image_count`; use `carousel_assignment_status: DEFERRED_TO_LAYOUT_MATRIX` when page logic is not ready, then write `RESOLVED` and exact `carousel_modules` before prompt writing.
 - Do not invent an image count or carousel mapping.
 
@@ -226,12 +247,12 @@ Create this at the project root after resolving the current project folder. It p
 {
   "version": 1,
   "workflow_version": "1.0.0",
-  "run_identity": "2026-06-30-product-name-style-a",
+  "run_identity": "2026-06-30-product-name-run1",
   "active_paths": [
     "拍摄图",
-    "输出/current_reference_library",
-    "full_production/current_style"
+    "输出/2026-06-30-product-name-run1"
   ],
+  "run_output_root": "输出/2026-06-30-product-name-run1",
   "include_root_files": true
 }
 ```
@@ -240,7 +261,8 @@ Rules:
 
 - `run_identity` must change for a new clean run or new test package.
 - `workflow_version: 1.0.0` marks a new stable run and requires the purpose-based v2 reference gate. `bootstrap_run.py` writes it automatically. Existing v1 files are not silently approved or rewritten; use a separate new run and v2 pool when migrating an old project.
-- `active_paths` should name only the current source folders, approved reference folder, current style folder, and current output folder.
+- `active_paths` should name only the current source folders, competitor evidence folders, and the run output folder; `bootstrap_run.py` registers all three. The state script only scans root files and these folders.
+- `RUN_OUTPUT_ROOT`: write every artifact this run generates under `run_output_root`: the white-background library in `<run_output_root>/reference_library/`, A/B/C samples in `<run_output_root>/style_samples/style_<A|B|C>/`, and formal production in `<run_output_root>/full_production/<style>/`. Root-level decision files such as `production_scope.json` stay at the project root. If a current-run artifact must live elsewhere (for example a reused approved reference folder the user names), register that existing folder with `scripts/bootstrap_run.py --project-root <root> --add-active-path <folder>`.
 - The state script may fall back to legacy unscoped scanning when this file is missing. A historical project with no version marker and neither preference artifact remains readable without retroactive regression; creating either preference artifact opts that project into the full gate. Formal new runs must create this file during initialization.
 - Do not use old project output folders as `active_paths` unless the user explicitly requests evidence-based reuse.
 
@@ -296,7 +318,7 @@ After style selection and compact context preparation, write one approved plan c
 ### 1. Initialization and Scope
 
 1. Resolve the project root and locate real product photos.
-2. Run `scripts/bootstrap_run.py` to create the active run, source/hash inventory, competitor ZIP inventory, and scope template in one pass.
+2. Run `scripts/bootstrap_run.py` to create the active run, source/hash inventory, competitor ZIP inventory, scope template, and `run_output_root` in one pass. If it reports `FALLBACK_ALL_PROJECT_IMAGES`, `NO_SUPPORTED_PHOTOS`, or photos to convert (for example iPhone `.HEIC`; on macOS `sips -s format jpeg <photo.heic> --out <photo.jpg>`), confirm the real product photos with the user before continuing.
 3. Run `scripts/design_workflow_state.py` once for initialization.
 4. If `production_scope.json` is missing or invalid, ask all missing counts/formats in one message and atomically write the completed JSON after the answer. For Premium A+ without page-display logic, record aggregate totals with `DEFERRED_TO_LAYOUT_MATRIX` and do not ask for a guessed carousel mapping.
 5. Refresh state only if scope creation changes the phase, then continue automatically.
@@ -313,6 +335,7 @@ Before either route generates an image, create and validate `reference_fidelity_
 - `REFERENCE_THREE_WAY_PARALLEL`: generate the `main-reference`, `angle-reference`, and `structure-reference` together with three thin image workers immediately after `reference_strategy.json`.
 - Default set: one `main-reference` front/global image, one `angle-reference` three-quarter or side image, and one `structure-reference` rear/top/bottom/detail image.
 - Use `DIRECT_IMAGE_INPUT` for each reference by attaching the exact photographed source path to image generation. Use `VISUAL_CONTEXT_RELAY` with `view_image` and the canary only as a fallback.
+- Save the references, their QC report and approval record in `<run_output_root>/reference_library/` so the state script can see them.
 - Do not generate one white-background image for every source photo; make the smallest useful set, but never fewer than three.
 - Run QC only after all three raw references exist. Then show the complete set for one manual approval before `PRODUCT_DETAIL_LOCKS`.
 - Create `01_product_truth.md` and `03_product_detail_locks.md` directly from real photos and confirmed user facts.
@@ -321,6 +344,7 @@ Before either route generates an image, create and validate `reference_fidelity_
 
 Invoke `product-reference-composer` with these limits:
 
+- Output folder: `<run_output_root>/reference_library/`.
 - Default target: one `main-reference` plus at least two `angle-reference` / `structure-reference` images.
 - Generate those three white-background images together under `REFERENCE_THREE_WAY_PARALLEL`.
 - Keep logo, label, button, interface, port, QR, bottom, or rear close-ups as `SOURCE_ONLY` evidence unless background removal is genuinely needed.
@@ -355,7 +379,7 @@ Invoke `amazon-product-selling-point-brief` when `我的产品信息与卖点优
 
 #### Dynamic Product Facts Gate
 
-After the self-product brief exists, create or update `product_facts_gate.md` and stop for confirmation before big-brand research, style recommendation, style samples, or full production.
+After the self-product brief exists, create or update `product_facts_gate.md` before big-brand research, style recommendation, style samples, or full production. First reconcile current product evidence and existing same-scope confirmations. If these support every fact needed by the planned claims and visuals, write `product_facts_confirmation.md` with `Status: NO_BLOCKING_MISSING_FACTS` and sources, then continue; do not add an unconditional confirmation turn or label an agent's inference as user approval. Stop only for unresolved blocking facts or exclusions requiring a user decision.
 
 This is not a fixed questionnaire. Generate the shortest useful question set from the current product:
 
@@ -389,6 +413,7 @@ Examples of dynamic fact families:
 - Unknown but intentionally excluded facts.
 - Forbidden claims.
 - Whether the product brief must be revised before proceeding.
+- The current product/variant and scope, plus the source of each reused user confirmation; keep evidence-backed facts distinct from explicit user approvals.
 
 #### Purpose-based design references and favorites
 
@@ -415,7 +440,7 @@ Create `大牌设计案例与版式库.md` for the current product before style 
 
 1. Generate exactly three written Style Specs: A, B, and C. All three must inherit the approved visual system, layout system, hybrid recipe, and rejected patterns from `visual_preference_profile.json`; vary only a bounded execution dimension so the user is not asked to re-choose already rejected styles.
 2. Use the same representative slot, product angle, selling point, and copy burden across all three styles so the comparison is fair.
-3. Generate exactly one representative image per style, three images total. When subagent capacity is available, dispatch A, B, and C as three independent `IMAGE_WORKER` tasks from one immutable comparison packet and generate them in parallel.
+3. Generate exactly one representative image per style, three images total, saved as `<run_output_root>/style_samples/style_<A|B|C>/`. When subagent capacity is available, dispatch A, B, and C as three independent `IMAGE_WORKER` tasks from one immutable comparison packet and generate them in parallel.
 4. Prefer an A+ hero slot when A+ is requested; otherwise use a secondary-main/core-feature slot.
 5. Do not use the strict white-background MAIN image as the default style-comparison slot because it reveals too little style difference. The required white-background references should already have been created and approved near the beginning of the workflow.
 6. Each sample must use `DIRECT_IMAGE_INPUT` with the smallest valid reference subset from the approved library and/or source photos. Use `VISUAL_CONTEXT_RELAY` only as the documented fallback.
@@ -451,7 +476,7 @@ If `OPTIONAL_CONTEXT_HANDOFF` is actually triggered, use this compact continuati
 恢复位置：`<next slot or from scratch>`
 生成规则：优先使用 `DIRECT_IMAGE_INPUT`，把该 slot 的精确本地参考图/源图通过生图工具原生引用输入传入；只有原生附件不可用时才回退到 `VISUAL_CONTEXT_RELAY`，紧邻生图前用 `view_image` 加载并带 `NO VIEW_IMAGE INPUT` canary；读取并执行 `visual_preference_profile.json` 的画面系统、排版系统、混合规则和拒绝项；在生图阶段边界批量写入 `generation_ledger.jsonl`；禁止把 Markdown 贴图、文件名、prompt 路径文字、旧聊天视觉上下文或 `TEXT_ONLY` 当作正式参考输入；正式提示词执行 `POSITIVE_CREATIVE_DIRECTION`、`ONE_VISUAL_MEMORY_POINT`、`COPY_OCCURRENCE_RULE` 和 `EVIDENCE_BASED_OMISSION`；`4:5 portrait` 主图 prompt 必须 apply stable runner 1.0.0 Main 4:5 Image2 Ratio Prompt Rule；以 `production_plan.json` 为唯一槽位事实源；Premium A+ 只使用 static modules / carousel modules；如果 `carousel_assignment_status` 为 `DEFERRED_TO_LAYOUT_MATRIX`，先根据页面展示逻辑完成计划，再写回 `RESOLVED` 和精确 `carousel_modules`，禁止在解析前写 prompt。
 执行：调用 `amazon-image-production-runner` 并读取 `references/agentic_production_contract.md`；先矩阵、prompt、prompt QC；取消所有 smoke，把全部独立 MAIN/A+ slot 一次加入统一队列，固定 3 个薄生图子智能体持续补位；所有 raw 图完成后再并行派发产品结构、文案风格、尺寸技术 3 个专职 QC；只返工失败 slot。
-导出规则：image2 负责构图和内容；stable 原图必须与目标比例精确一致，只允许等比例 resize。不得裁切、补边、拉伸、拼接或手工排版；任何比例不符回到 image2 返工该 slot。
+导出规则：image2 负责构图和内容；导出文件必须是目标精确像素。执行 `BOUNDED_RATIO_EXPORT`：原图宽高比与目标相差不超过 1% 时直接缩放到目标尺寸并记录 `dimension_corrections`，超过 1% 回到 image2 返工该 slot。不得裁切、补边、明显拉伸、拼接或手工排版。
 Worker 规则：图片 worker 只接收 task/slot、prompt、原生参考路径和唯一输出路径，只返回最小回执；非图片/QC worker 只有实际派发时才创建 packet/report。
 ```
 
@@ -490,8 +515,10 @@ Worker/subagent rules:
 - Prompt QC must pass before the full raw generation queue starts.
 - Prompt QC must include Product Exposure Role QC plus the Visual Repetition Gate: check whether adjacent or high-similarity slots repeat the same product reference, angle, size, scene, placement, and product role. This QC must not require any fixed P0/P1 count, but it must fail or revise generic "show the product" reasoning, role-label-only differences, or repeated same-angle complete-product anchors.
 - Finished-image QC must score product credibility, selling-point clarity, visual impact, layout maturity, text readability, and size/aspect correctness.
+- For a directed edit, compare the changed region and the preserved items against the recorded baseline. Verify exact copy/Q&A and slot order where applicable, and inspect preserved composition and product details; an improved target region does not excuse regressions elsewhere. Recheck realistic cable-to-port connections, texture boundaries, material reflections and complete, natural human/animal interactions when present.
 - Product credibility must be at least 4/5; the overall average across the scored dimensions must be at least 4/5. For `P0` slots, product credibility means claim accuracy, no unsupported product implication, and no unintended product depiction.
-- Blocking failures include structural drift, wrong selling point, unreadable/garbled key text, missing product when the matrix requires `P1`-`P4`, any raw aspect-ratio mismatch, visible distortion, any need for crop/pad/manual composition, or layout/readability failure.
+- Blocking failures for every route include structural drift, wrong selling point, unreadable/garbled key text, missing required product, visible distortion, or layout/readability failure. Final dimensions and aspect ratio must match the scoped target.
+- The default formal image2 route additionally blocks a missing product when the matrix requires `P1`-`P4`, a raw aspect ratio more than 1% off the target (`BOUNDED_RATIO_EXPORT`), or any need for crop/pad/manual composition. An explicit model/PS artifact under `ARTIFACT_SCOPED_METHOD` is assessed by its actual content/format QA; the use of that requested method is not itself a failure and cannot satisfy formal image2 provenance/export gates.
 - Route failures back to reference strategy, product truth/detail locks, matrix, prompt, generation variation, or export as appropriate.
 - Do not blindly regenerate the whole set.
 - If only visual impact is weak while product credibility and selling-point clarity pass, ask before spending another generation.
@@ -509,8 +536,8 @@ Worker/subagent rules:
 
 ### Basic A+
 
-- Ask for the actual image count.
-- Each image is `960x600`.
+- Ask for the actual image count, at most 5 (Amazon's Basic A+ module limit).
+- Each image is `970x600`, the Standard Image Header With Text size.
 
 ### Premium A+
 
@@ -545,6 +572,10 @@ Typical reference count:
 - Technical/A+ detail image: 2-3.
 - Rarely exceed 3.
 
+## Skill Sharing Check — Only When Requested
+
+When asked to package or share this Skill, verify the deliverable from a new user's starting point: include the referenced Skill dependencies, scripts, templates and rules, or state the intentionally unsupported routes; install the package into a clean temporary directory and run the applicable checks without relying on this machine's active Skill links. Keep the package, version and tutorial instructions consistent. After an authorized release, download from the actual published link and verify that package again; local packaging alone is not a verified public release. This check does not authorize GitHub pushes, releases, tutorial publication or messages.
+
 ## State and Response Contract
 
 `design_workflow_state.json` is the canonical machine-readable state. `design_workflow_state.md` is a compact human summary and must not repeat the full transition table, fixed rules, or artifact inventory. Generate both only at the boundaries listed in `STATE_REFRESH_BUDGET`, not as a polling mechanism.
@@ -575,10 +606,20 @@ Do not repeat questions already answered in `production_scope.json`, `reference_
 
 ## Script
 
+macOS / Linux:
+
+```bash
+PYTHONUTF8=1 python3 '<skill-dir>/scripts/design_workflow_state.py' --project-root '<project-root>'
+```
+
+Windows PowerShell:
+
 ```powershell
 $env:PYTHONUTF8='1'
 & '<python.exe>' '<skill-dir>\scripts\design_workflow_state.py' --project-root '<project-root>'
 ```
+
+Use a Python 3.10+ interpreter that has Pillow for the image scripts.
 
 Options:
 

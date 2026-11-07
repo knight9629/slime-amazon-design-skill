@@ -106,21 +106,22 @@ Use this structure by default:
 |---|---|---|---|---|---|
 
 ## 主图展示逻辑
+> 按本产品卖点优先级和类目设计任务命名每张图，不照抄其他类目的图位（例如投影仪的“画质图、连接兼容图”只适用于投影仪）。张数以用户确认的范围为准。
 1. 白底主图：
 2. 核心卖点图：
-3. 智能系统/内容图：
-4. 画质图：
-5. 安装校正图：
-6. 连接兼容图：
+3. <本产品第二卖点或功能证明>：
+4. <效果/结果证明，如画质、风力、容量、舒适度、清洁效果>：
+5. <使用、安装、尺寸或操作说明>：
+6. <细节、材质、配件或兼容性证明，仅在相关时>：
 7. 场景/包装/服务图：
 
 ## A+ 展示逻辑
 1. 首屏：
 2. 核心功能总览：
-3. 智能系统：
-4. 画质：
-5. 易用性：
-6. 连接：
+3. <按卖点优先级排列的功能/证明模块>：
+4. <效果或使用结果模块>：
+5. 易用性/使用方式：
+6. <细节、材质、尺寸或兼容性模块，仅在相关时>：
 7. 场景：
 8. 服务/包装：
 
@@ -145,8 +146,8 @@ Use this structure by default:
 ## Judgment Rules
 
 - Do not let competitor selling points override product truth.
-- Do not use platform logos, official app claims, Dolby/Hi-Res/ANSI/HDR/certification claims unless the user confirms support or proof.
-- If a product has no built-in battery, do not imply cordless outdoor use.
+- Do not use platform logos, official app claims, licensed technology marks, standards or certification claims (for example Dolby, HDR, ANSI, FDA, UL, CE) unless the user confirms support or proof.
+- Do not imply capabilities the product lacks, such as cordless or outdoor use without a built-in battery, or waterproofing without a rating.
 - If the user gives a weak or incomplete spec, prefer cautious wording over strong claims.
 - Keep the final document practical for image prompts and design planning.
 - Category playbooks are advisory. They must not override confirmed product facts, claim risk, local detail locks, or competitor category norms.

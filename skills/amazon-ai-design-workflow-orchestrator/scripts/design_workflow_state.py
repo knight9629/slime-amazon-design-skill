@@ -39,12 +39,32 @@ GENERATED_PATH_MARKERS = [
     "a_plus_basic",
     "a_plus_premium",
 ]
+WHITE_REFERENCE_MARKERS = [
+    "white_bg_reference",
+    "white-bg",
+    "white_background",
+    "white-background",
+    "白底参考",
+    "参考图库",
+    "main-reference",
+    "angle-reference",
+    "structure-reference",
+]
+COMPETITOR_MARKERS = ["竞品", "competitor"]
+# Workflow bookkeeping such as competitor_zip_inventory.json is not competitor evidence.
+COMPETITOR_EVIDENCE_EXTENSIONS = IMAGE_EXTENSIONS | {".zip", ".pdf"}
+OUT_OF_SCOPE_WHITE_REFERENCES = "out-of-scope white-background references"
+DIAGNOSTIC_FOUND_KEYS = {"quick sample artifacts", OUT_OF_SCOPE_WHITE_REFERENCES}
 
 STATE_VERSION = 14
 SKILL_VERSION = "1.0.0"
 VISUAL_PREFERENCE_REQUIRED_SINCE = (0, 6, 10)
 TIMING_TOLERANCE_MS = 2_000
 MAX_ELAPSED_MS = 7 * 24 * 60 * 60 * 1000
+# BOUNDED_RATIO_EXPORT limit; must equal the runner's preflight_qc.py and
+# postprocess_images.py so preflight reports and state validation agree.
+MAX_ASPECT_CORRECTION_PCT = 1.0
+RESIZABLE_DIMENSION_STATUSES = {"SAME_ASPECT_RESIZE_REQUIRED", "SMALL_RATIO_CORRECTION_CANDIDATE"}
 FULL_FLOW_MODE = "FULL_FLOW"
 AGENT_TASK_STATUSES = {
     "PLANNED",
@@ -250,6 +270,20 @@ def has_any(text: str, keywords: list[str]) -> bool:
     return any(keyword.lower() in lowered for keyword in keywords)
 
 
+# Keyword classification sees only the path inside the run output folder or the
+# project, never folder names above it such as ~/亚马逊产品项目/ or a run identity.
+_MATCH_ROOTS: tuple[Path, ...] = ()
+
+
+def match_text(path: Path) -> str:
+    for base in _MATCH_ROOTS:
+        try:
+            return path.relative_to(base).as_posix()
+        except ValueError:
+            continue
+    return str(path)
+
+
 def normalize_active_path(root: Path, value: Any) -> tuple[str, Path | None, str | None]:
     root = root.expanduser().resolve()
     text = str(value).strip()
@@ -285,6 +319,9 @@ def load_active_run(root: Path) -> dict[str, Any]:
             "scoped": False,
             "workflow_version": None,
             "workflow_version_present": False,
+            "run_output_root": None,
+            "run_output_root_path": None,
+            "created_at": None,
         }
 
     errors: list[str] = []
@@ -337,6 +374,16 @@ def load_active_run(root: Path) -> dict[str, Any]:
             continue
         active_roots.append(resolved)
 
+    run_output_root: str | None = None
+    run_output_root_path: Path | None = None
+    if data.get("run_output_root") is not None:
+        text, resolved, error = normalize_active_path(root, data.get("run_output_root"))
+        run_output_root = text or None
+        if error:
+            errors.append(f"run_output_root: {error}")
+        elif resolved is not None and resolved.is_dir():
+            run_output_root_path = resolved
+
     return {
         "path": path,
         "run_identity": run_identity or "missing",
@@ -344,6 +391,9 @@ def load_active_run(root: Path) -> dict[str, Any]:
         "include_root_files": include_root_files,
         "active_roots": active_roots,
         "errors": errors,
+        "run_output_root": run_output_root,
+        "run_output_root_path": run_output_root_path,
+        "created_at": data.get("created_at"),
         "scoped": True,
         "workflow_version": workflow_version,
         "workflow_version_present": workflow_version_present,
@@ -477,11 +527,11 @@ def rel_list(root: Path, paths: list[Path], limit: int = 20) -> list[str]:
 
 
 def is_generated_path(path: Path) -> bool:
-    return has_any(str(path), GENERATED_PATH_MARKERS)
+    return has_any(match_text(path), GENERATED_PATH_MARKERS)
 
 
 def is_quick_sample_path(path: Path) -> bool:
-    return has_any(str(path), ["quick_samples", "quick sample", "快速样张"])
+    return has_any(match_text(path), ["quick_samples", "quick sample", "快速样张"])
 
 
 def find_product_photo_dirs(dirs: list[Path], files: list[Path]) -> list[Path]:
@@ -502,22 +552,24 @@ def find_product_photo_dirs(dirs: list[Path], files: list[Path]) -> list[Path]:
         "photo_input",
         "素材图",
         "源图",
+        "实物",
+        "原图",
     ]
     excluded = ["竞品", "competitor", *GENERATED_PATH_MARKERS]
 
     direct = [
         path
         for path in dirs
-        if has_any(path.name, dir_keywords) and not has_any(str(path), excluded)
+        if has_any(path.name, dir_keywords) and not has_any(match_text(path), excluded)
     ]
 
     image_parent_dirs: set[Path] = set()
-    file_keywords = ["_source", "source_", "-source", "_input", "input_", "实拍", "拍摄"]
-    parent_keywords = ["source", "input", "photo", "image", "产品", "product", "实拍", "拍摄"]
+    file_keywords = ["_source", "source_", "-source", "_input", "input_", "实拍", "拍摄", "img_", "dsc"]
+    parent_keywords = ["source", "input", "photo", "image", "产品", "product", "实拍", "拍摄", "实物", "原图"]
     for path in files:
         if path.suffix.lower() not in IMAGE_EXTENSIONS:
             continue
-        if is_generated_path(path) or has_any(str(path), ["竞品", "competitor"]):
+        if is_generated_path(path) or has_any(match_text(path), ["竞品", "competitor"]):
             continue
         if has_any(path.name, file_keywords) or has_any(path.parent.name, parent_keywords):
             image_parent_dirs.add(path.parent)
@@ -529,7 +581,7 @@ def text_files_named(files: list[Path], keywords: list[str]) -> list[Path]:
     return [
         path
         for path in files
-        if path.suffix.lower() in TEXT_EXTENSIONS and has_any(str(path), keywords)
+        if path.suffix.lower() in TEXT_EXTENSIONS and has_any(match_text(path), keywords)
     ]
 
 
@@ -537,7 +589,7 @@ def image_files_named(files: list[Path], keywords: list[str]) -> list[Path]:
     return [
         path
         for path in files
-        if path.suffix.lower() in IMAGE_EXTENSIONS and has_any(str(path), keywords)
+        if path.suffix.lower() in IMAGE_EXTENSIONS and has_any(match_text(path), keywords)
     ]
 
 
@@ -740,8 +792,8 @@ def validate_production_scope(paths: list[Path]) -> dict[str, Any]:
             image_count = aplus.get("image_count")
             if not isinstance(image_count, int) or image_count <= 0:
                 errors.append("aplus.image_count must be a positive integer for Basic A+")
-            elif image_count > 7:
-                errors.append("Basic A+ supports at most 7 standalone images")
+            elif image_count > 5:
+                errors.append("Basic A+ supports at most 5 standalone images (Amazon's Basic A+ module limit)")
 
         if aplus_type == "premium":
             module_count = aplus.get("module_count")
@@ -2773,9 +2825,9 @@ def validate_preflight(
         ):
             errors.append(f"{prefix}.dimensions must contain two positive integers")
         dimension_status = str(slot.get("dimension_status", "")).upper()
-        if dimension_status not in {"PASS", "SMALL_RATIO_CORRECTION_CANDIDATE"}:
+        if dimension_status not in {"PASS", *RESIZABLE_DIMENSION_STATUSES}:
             errors.append(f"{prefix}.dimension_status is not acceptable")
-        if dimension_status == "SMALL_RATIO_CORRECTION_CANDIDATE":
+        if dimension_status in RESIZABLE_DIMENSION_STATUSES:
             needs_visual_qc = True
         ocr_status = str(slot.get("ocr_status", "")).upper()
         if ocr_status not in {"NOT_REQUIRED", "PASS", "OCR_UNAVAILABLE", "OCR_ERROR"}:
@@ -2856,11 +2908,15 @@ def validate_preflight(
                                 actual_ratio = actual_dimensions[0] / actual_dimensions[1]
                                 target_ratio = target_tuple[0] / target_tuple[1]
                                 computed_ratio_error = abs(actual_ratio / target_ratio - 1.0) * 100
-                                expected_dimension_status = (
-                                    "SMALL_RATIO_CORRECTION_CANDIDATE"
-                                    if computed_ratio_error <= 2.0
-                                    else "FAIL"
-                                )
+                                if (
+                                    actual_dimensions[0] * target_tuple[1]
+                                    == target_tuple[0] * actual_dimensions[1]
+                                ):
+                                    expected_dimension_status = "SAME_ASPECT_RESIZE_REQUIRED"
+                                elif computed_ratio_error <= MAX_ASPECT_CORRECTION_PCT:
+                                    expected_dimension_status = "SMALL_RATIO_CORRECTION_CANDIDATE"
+                                else:
+                                    expected_dimension_status = "FAIL"
                             if dimension_status != expected_dimension_status:
                                 errors.append(
                                     f"{prefix}.dimension_status does not match actual dimensions "
@@ -2884,7 +2940,8 @@ def validate_preflight(
                                     )
                             elif expected_dimension_status == "FAIL":
                                 errors.append(
-                                    f"{prefix} actual ratio exceeds the 2% correction limit"
+                                    f"{prefix} actual ratio exceeds the "
+                                    f"{MAX_ASPECT_CORRECTION_PCT:g}% BOUNDED_RATIO_EXPORT limit"
                                 )
         slot_errors = slot.get("errors", [])
         if not isinstance(slot_errors, list) or slot_errors:
@@ -3772,7 +3829,7 @@ def validate_agent_task_registry(
 
 
 def style_branch(path: Path) -> str | None:
-    value = str(path).lower().replace("\\", "/")
+    value = match_text(path).lower().replace("\\", "/")
     patterns = {
         "A": [r"(?:^|[/_\- ])style[_\- ]?a(?:[/_\- ]|$)", r"风格[_\- ]?a"],
         "B": [r"(?:^|[/_\- ])style[_\- ]?b(?:[/_\- ]|$)", r"风格[_\- ]?b"],
@@ -3784,30 +3841,78 @@ def style_branch(path: Path) -> str | None:
     return None
 
 
-def scan_project(root: Path, active_run: dict[str, Any] | None = None) -> dict[str, list[Path]]:
-    dirs, files = collect_paths(root, active_run=active_run)
-    product_photos = find_product_photo_dirs(dirs, files)
-
-    white_reference_images = [
+def white_reference_candidates(files: list[Path]) -> list[Path]:
+    return [
         path
         for path in files
         if path.suffix.lower() in IMAGE_EXTENSIONS
-        and has_any(
-            str(path),
-            [
-                "white_bg_reference",
-                "white-bg",
-                "white_background",
-                "white-background",
-                "白底参考",
-                "参考图库",
-                "main-reference",
-                "angle-reference",
-                "structure-reference",
-            ],
-        )
+        and has_any(match_text(path), WHITE_REFERENCE_MARKERS)
         and not is_quick_sample_path(path)
     ]
+
+
+def created_since_run_start(path: Path, active_run: dict[str, Any]) -> bool:
+    try:
+        started = datetime.fromisoformat(str(active_run.get("created_at")))
+    except ValueError:
+        return True
+    try:
+        modified = datetime.fromtimestamp(path.stat().st_mtime, tz=started.tzinfo)
+    except OSError:
+        return False
+    return modified >= started
+
+
+def scan_project(root: Path, active_run: dict[str, Any] | None = None) -> dict[str, list[Path]]:
+    global _MATCH_ROOTS
+    previous = _MATCH_ROOTS
+    match_roots = [root, root.resolve()]
+    run_output_root = (active_run or {}).get("run_output_root_path")
+    if isinstance(run_output_root, Path):
+        match_roots.insert(0, run_output_root)
+    _MATCH_ROOTS = tuple(match_roots)
+    try:
+        return scan_project_paths(root, active_run)
+    finally:
+        _MATCH_ROOTS = previous
+
+
+def inventory_source_dirs(root: Path, active_run: dict[str, Any] | None) -> list[Path]:
+    """Photo folders bootstrap_run.py inventoried for the current run."""
+    if not active_run or not active_run.get("scoped"):
+        return []
+    try:
+        inventory = json.loads((root / "source_inventory.json").read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return []
+    if not isinstance(inventory, dict) or inventory.get("run_identity") != active_run.get("run_identity"):
+        return []
+    folders: set[Path] = set()
+    for item in inventory.get("images", []):
+        if isinstance(item, dict) and (root / str(item.get("path", ""))).is_file():
+            # Resolved like the scanner's active roots, so both sources compare equal.
+            folders.add((root / str(item["path"])).resolve().parent)
+    return sorted(folders)
+
+
+def scan_project_paths(root: Path, active_run: dict[str, Any] | None) -> dict[str, list[Path]]:
+    dirs, files = collect_paths(root, active_run=active_run)
+    # The run's bootstrap inventory is the canonical photo list; keywords remain
+    # the fallback for legacy projects without one.
+    product_photos = find_product_photo_dirs(dirs, files) or inventory_source_dirs(root, active_run)
+
+    white_reference_images = white_reference_candidates(files)
+    # A scoped run that cannot see three references may have written them outside
+    # active_paths; report those instead of letting the next action regenerate them.
+    out_of_scope_white_references: list[Path] = []
+    if active_run and active_run.get("scoped") and len(white_reference_images) < 3:
+        in_scope = {path.resolve() for path in white_reference_images}
+        _, project_files = collect_paths(root)
+        out_of_scope_white_references = [
+            Path(rel(root, path))
+            for path in white_reference_candidates(project_files)
+            if path.resolve() not in in_scope and created_since_run_start(path, active_run)
+        ]
 
     style_samples_by_branch: dict[str, list[Path]] = {"A": [], "B": [], "C": []}
     for path in files:
@@ -3815,9 +3920,9 @@ def scan_project(root: Path, active_run: dict[str, Any] | None = None) -> dict[s
             continue
         # Formal production is commonly stored under the selected style folder.
         # Never misclassify canonical raw production outputs as style samples.
-        if "_raw" in path.name.lower() or has_any(str(path), ["raw_generated", "main_1x1", "main_portrait", "a_plus_"]):
+        if "_raw" in path.name.lower() or has_any(match_text(path), ["raw_generated", "main_1x1", "main_portrait", "a_plus_"]):
             continue
-        if not has_any(str(path), ["style", "风格", "samples", "小样"]):
+        if not has_any(match_text(path), ["style", "风格", "samples", "小样"]):
             continue
         branch = style_branch(path)
         if branch:
@@ -3843,12 +3948,16 @@ def scan_project(root: Path, active_run: dict[str, Any] | None = None) -> dict[s
     aplus_raw = [path for path in raw_images if slot_from_raw_filename(path) and slot_from_raw_filename(path).startswith("AP")]
 
     competitor_materials = [
+        path for path in dirs if has_any(match_text(path), COMPETITOR_MARKERS)
+    ] + [
         path
-        for path in dirs + files
-        if has_any(str(path), ["竞品", "competitor"])
+        for path in files
+        if path.suffix.lower() in COMPETITOR_EVIDENCE_EXTENSIONS
+        and has_any(match_text(path), COMPETITOR_MARKERS)
     ]
 
     return {
+        OUT_OF_SCOPE_WHITE_REFERENCES: out_of_scope_white_references,
         "product photo folder": product_photos,
         "production scope": exact_files(files, ["production_scope.json"]),
         "reference strategy": exact_files(files, ["reference_strategy.json"]),
@@ -4232,12 +4341,25 @@ def determine_stage(
 
     white_reference_count = len(found.get("white-background reference images", []))
     if white_reference_count < 3:
+        missing = [f"at least 3 white-background reference images generated from photographed source images ({white_reference_count}/3 found)"]
+        next_action = "Generate at least three white-background references with DIRECT_IMAGE_INPUT; use VISUAL_CONTEXT_RELAY only as fallback, then run reference QC."
+        outside = found.get(OUT_OF_SCOPE_WHITE_REFERENCES, [])
+        if outside:
+            listed = ", ".join(path.as_posix() for path in outside[:3])
+            missing.append(
+                f"{len(outside)} white-background reference image(s) created since this run started "
+                f"are outside active_run.json active_paths: {listed}"
+            )
+            next_action = (
+                "Do not regenerate them: move them under run_output_root or register their folder with "
+                "bootstrap_run.py --add-active-path <folder>, then refresh the state."
+            )
         return (
             "REFERENCE_LIBRARY_BUILD",
             "White-background reference library",
-            [f"at least 3 white-background reference images generated from photographed source images ({white_reference_count}/3 found)"],
+            missing,
             "The workflow must create a white-background reference library from the product photos before product facts, competitor research, style samples, or formal production.",
-            "Generate at least three white-background references with DIRECT_IMAGE_INPUT; use VISUAL_CONTEXT_RELAY only as fallback, then run reference QC.",
+            next_action,
         )
 
     reference_qc_status = report_status(found.get("reference QC", []))
@@ -4543,7 +4665,7 @@ def determine_stage(
             "Deterministic whole-set preflight",
             ["preview/preflight_qc.json with PASS or NEEDS_VISUAL_QC", *preflight["errors"]],
             "All raw slots exist, so the generation phase is closed; cheap file, hash, dimension, ratio, and OCR checks now run once for the whole set.",
-            "Run preflight_qc.py once. A ratio error <=2% becomes a visual-review candidate; OCR_UNAVAILABLE routes to visual QC and never passes copy.",
+            f"Run preflight_qc.py once. Same-aspect raws and ratio errors <={MAX_ASPECT_CORRECTION_PCT:g}% become visual-review resize candidates; larger errors return the slot to image2. OCR_UNAVAILABLE routes to visual QC and never passes copy.",
         )
 
     if not post_generation_qc["valid"]:
@@ -4607,7 +4729,7 @@ def completed_artifacts(found: dict[str, list[Path]]) -> list[str]:
     return [
         key
         for key, paths in found.items()
-        if paths and key != "quick sample artifacts"
+        if paths and key not in DIAGNOSTIC_FOUND_KEYS
     ]
 
 
@@ -4728,7 +4850,7 @@ def build_state(
     artifacts = {
         key: rel_list(root, paths, limit=6)
         for key, paths in found.items()
-        if paths and key != "quick sample artifacts"
+        if paths and key not in DIAGNOSTIC_FOUND_KEYS
     }
     context_pack_files = found.get("production handoff", []) + found.get("production context pack", [])
     formal_production_active = stage in {

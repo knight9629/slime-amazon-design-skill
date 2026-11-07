@@ -16,7 +16,10 @@ references, rejected directions, facts, detail locks, and production scope.
 Do not replace those choices with an independent reference-selection round.
 The controller owns the subsequent `STYLE_SAMPLES` stage: exactly one comparable
 representative image per A/B/C style under its current contract. If delegated
-sample generation, use Mode 2B and return results to that same run. The bundled
+sample generation, use Mode 2B, save each sample under
+`<run_output_root>/style_samples/style_<A|B|C>/`, and return each output path,
+prompt, exact reference paths and start/end time to that same run so the
+controller can write `generation_ledger.jsonl`. The bundled
 `amazon-image-production-runner` is available for approved formal production;
 the standalone modes and older handoff format below remain compatibility paths.
 
@@ -26,7 +29,9 @@ Reduce image-generation cost by separating style selection from full production.
 
 Before branches, recommend three styles dynamically from the current product shape, product selling points, and competitor creative patterns. In each branch, generate only the minimum required sample set first. Do not default to fixed style names.
 
-Use this skill for Amazon style recommendation and branch samples, not for ordinary one-off AI image generation. Ordinary AI image requests default to one final image with image2 unless the user asks for Amazon style exploration, branch samples, or full main-image/A+ production.
+Use this skill for Amazon style recommendation and branch samples, not for ordinary one-off AI image generation. Ordinary AI image requests default to one final image with the latest verified supported image model unless the user asks for Amazon style exploration, branch samples, or full main-image/A+ production.
+
+`LATEST_IMAGE_MODEL`: apply the `imagegen` model policy before generation. Resolve the newest stable model from current official image-generation documentation; as checked on `2026-10-15`, prefer `gpt-image-2.5-sunburst` for product fidelity and precise edits. `image2` below is a compatibility route name, not a pinned model version. A prompt cannot select the backend. If the available tool cannot select or verify the required latest model, report `blocked: model_selection_unavailable` before generation, with actual model `unknown` and verification `unverified`; do not claim an upgrade or silently switch to a paid API. Pass the resolved target and verified execution route to any fresh image worker as separate execution instructions, preserving the existing image packet. Existing product-reference and QC gates still apply.
 
 ## Inputs
 
@@ -175,7 +180,7 @@ Workflow:
    - `white_main`: 1:1 white-background main image sample.
    - `core_feature`: 1:1 core selling-point or feature image sample.
    - `aplus_hero`: A+ hero sample in the user-selected A+ format:
-     - Basic A+: `960x600`, shared by desktop/mobile
+     - Basic A+: `970x600`, shared by desktop/mobile
      - Premium A+ desktop: `1464x600`
      - Premium A+ mobile: `600x450`, only when the user requests a mobile sample
    - Before each product-referenced sample, execute the visual-input gate above, preferring native referenced-image paths.
@@ -216,13 +221,13 @@ Always include these constraints in sample prompts when relevant:
 
 - Use the standard white-background product reference image as the single product shape source.
 - Pass that product reference through `DIRECT_IMAGE_INPUT`; use adjacent `view_image` relay only as fallback. Markdown display or prompt-only paths are not enough.
-- Preserve the actual product body, lens, stand, ports, logo area, materials, and distinctive structure.
+- Preserve the actual product body, silhouette, proportions, logo area, materials, and distinctive structures (for example controls, ports, lens, stand, hinges).
 - Preserve locked local details from `03_product_detail_locks.md` or `产品局部细节锁.md`; do not simplify them into generic buttons, grilles, ports, logos, or accessories.
 - Apply category-specific physical/compliance constraints only when supported by current product truth, the matched playbook, or the confirmed brief; do not inherit another SKU's constraints.
-- Do not imply built-in battery unless confirmed.
+- Do not imply a power source, built-in battery, cordless use, or other capability unless confirmed.
 - Do not invent accessories, cables, handles, buttons, ports, or extra screens.
 - Do not use real platform logos or authorization claims unless the product brief confirms they are allowed.
-- Follow the global AI image rule: when the user asks for AI image generation, put the needed copy, layout hierarchy, parameters, and icon/badge intent directly into the image-generation prompt by default.
+- Put the needed copy, layout hierarchy, parameters, and icon/badge intent directly into the image-generation prompt by default.
 - Use image2 directly for text, icons, parameters, badges, and final composition by default.
 - If the human-use suitability is `high` or `medium`, do not write generic negative constraints such as `no people`, `no hands`, or `no face` unless that exact image slot is a white-background hero, pure diagram, or compliance-sensitive detail shot.
 - For real-person scenes, specify the user role, action, body framing, product contact point, gaze/attention, distance from product, and how the person proves scale or usage benefit.
@@ -245,7 +250,7 @@ Before writing any sample prompt, separate and verify:
 4. Human-use scene gate
    - Suitability level and reason.
    - Whether this sample should include a real person, hands, face, side face, or no person.
-   - User action: operating, feeling airflow, reading beside the fan, working at a desk, carrying, charging, cleaning, or other product-specific use.
+   - User action: operating, holding, wearing, reading or working beside the product, carrying, charging, cleaning, or other product-specific use.
    - Person must support the product story and must not steal the hero role unless the style intentionally uses a people-first lifestyle shot.
 
 5. Conflict scan
@@ -310,7 +315,7 @@ When the user chooses a style and asks to continue:
   - Non-negotiable prompt constraints
 - Hand off to full production only after the user confirms whether they want main images, Basic A+, Premium A+, or a combination, plus the required counts.
 - Prefer mother-image reuse: one visual concept can be reused across requested sizes where practical.
-- This skill may hand off to a future `amazon-image-production-runner` if it exists.
+- Formal production continues through the bundled `amazon-image-production-runner`, normally inside the orchestrator's same task.
 
 ## Rules
 

@@ -7,6 +7,10 @@ description: "Use when the user asks for 产品参考图, 白底参考图, 合�
 
 Skill version: `0.6.2-compatible`
 
+## Image model default
+
+`LATEST_IMAGE_MODEL`: apply the `imagegen` model policy before reference generation or correction. Resolve the newest stable model from current official image-generation documentation; as checked on `2026-10-15`, prefer `gpt-image-2.5-sunburst` for product fidelity and precise edits. `image2` below is a compatibility route name, not a pinned model version. Select the model only through a supported execution parameter; prompt text cannot switch it. If the route cannot select or verify the required latest model, report `blocked: model_selection_unavailable` before generation, actual model `unknown`, and verification `unverified`. Do not silently use an older model or switch to a paid API. Pass the resolved target and verified execution route to any fresh image worker as separate execution instructions. Preserve source-photo truth, visual-input provenance and all existing QC gates.
+
 ## Integration with the 1.0 full workflow
 
 When invoked by `amazon-ai-design-workflow-orchestrator` 1.0, its current-product
@@ -18,6 +22,8 @@ one set-level user approval, without a separate one-image smoke-test gate.
 This does not relax real-image input, provenance, product fidelity, or rejection
 of missing visual input. Keep unused detail photos as `SOURCE_ONLY` evidence.
 Use the controller's QC statuses and its maximum of two controlled revision rounds.
+Write the library and its reports to `<run_output_root>/reference_library/` from the
+project's `active_run.json` so the controller's state script can see them.
 Resolve this Skill's `scripts/` paths from this installed Skill directory.
 The standalone workflow below still applies when this Skill is requested alone.
 
@@ -38,19 +44,19 @@ White-background reference images are working references, not the only truth sou
 
 Image2 product-reference input rule:
 
-- Per-photo white-background references must be created by calling the image2 model with the actual real product photo available to that generation.
+- Per-photo white-background references must use the resolved latest model through the supported image-generation route, with the actual real product photo available to that generation.
 - Preferred route: pass the source photo into the same image2 generation/edit call as the image-to-image base, edit target, uploaded asset, mask target, or equivalent image input. Mark provenance as `DIRECT_IMAGE_INPUT`.
 - Fallback route when the current Codex image2 tool has no explicit image-input parameter: use the visual-context relay. Mark provenance as `VISUAL_CONTEXT_RELAY` only if the exact source photo is opened with `view_image` immediately before the image2 call, the prompt explicitly refers to the current `view_image` visual context, and the generated result passes the smoke test and reference QC below.
 - A prompt that merely mentions a source filename, writes a local path in the prompt, displays a Markdown image in chat, describes the source photo from memory, uses only `01_product_truth.md`, or relies on a contact sheet alone does not count as using the real photo. Mark that attempt as `TEXT_ONLY` and reject it for downstream product-shape use.
 - If neither `DIRECT_IMAGE_INPUT` nor a validated `VISUAL_CONTEXT_RELAY` route is available, do not create or approve a generated white-background reference for that slot. Keep the real photo as `SOURCE_ONLY` and stop for a valid image2 route.
 - Do not substitute other generation methods for white-background references, including text-only generation, local cutout/background removal as the final reference, Photoshop generative tools, Stable Diffusion, Midjourney, browser image tools, PPT, HTML/CSS, Python canvas, or manual compositing.
-- Record the source photo path or uploaded asset id, the route (`DIRECT_IMAGE_INPUT` or `VISUAL_CONTEXT_RELAY`), and `model: image2` for every generated reference. References without this provenance are `REJECT` for downstream product-shape use.
+- Record the source photo path or uploaded asset id, the route (`DIRECT_IMAGE_INPUT` or `VISUAL_CONTEXT_RELAY`), compatibility provider `image2`, resolved target model, actual model when exposed, and verification status for every new generated reference. Use `actual_model: unknown` and `model_verification: unverified` when unavailable; never invent a version from `image2`. References without visual-input provenance are `REJECT` for downstream product-shape use. Preserve legacy records unchanged.
 - Chat-visible Markdown images and paths written only in the prompt are diagnostic only and must not be used for formal reference-library output.
 - Every `VISUAL_CONTEXT_RELAY` prompt must include this fail-fast canary: if the current `view_image` visual input is unavailable, output a plain white card with large red text `NO VIEW_IMAGE INPUT`.
 
 ## Fallback Visual-Context Image Relay
 
-Use this route only as an image2 fallback when no explicit image-input field is available in the current tool. Do not reference old threads, archived conversations, screenshots of old outputs, or a thread named `测试1`; the reusable method must be executed from the current product folder.
+Use this route only as an image2 fallback when no explicit image-input field is available in the current tool. Do not reference old threads, archived conversations, or screenshots of old outputs; the reusable method must be executed from the current product folder.
 
 Required sequence:
 
@@ -82,10 +88,11 @@ Provenance statuses:
 1. Locate the source photos.
    - If the user gives a folder, use that folder.
    - If not, ask for the folder path.
-   - Accept `.jpg`, `.jpeg`, `.png`, and `.webp`.
+   - Accept `.jpg`, `.jpeg`, `.png`, and `.webp`. Convert iPhone `.HEIC` or other camera formats to JPEG first; on macOS: `sips -s format jpeg <photo.heic> --out <photo.jpg>`.
 
 2. Create or reuse the output folder.
-   - Default under the current project: `输出/<product>_white_bg_reference_library/`.
+   - Inside the full workflow, use `<run_output_root>/reference_library/` from `active_run.json`.
+   - Standalone default under the current project: `输出/<product>_white_bg_reference_library/`.
    - If the user gives a target folder, use it.
    - Never leave the only usable generated image in `$CODEX_HOME/generated_images/...`; copy outputs into the project folder.
 
@@ -127,7 +134,7 @@ Provenance statuses:
    - Do not create marketing imagery in this stage.
    - Do not add dimensions, arrows, labels, dense copy, badges, props, lifestyle scenes, or claims.
    - Local scripts may build contact sheets, manifests, previews, crops, or deterministic exports only. They must not create, replace, redraw, retouch, or composite the product reference image.
-   - Save the prompt or instruction with an explicit `Model: image2` line, a `Route:` line, and an `Input image:` or `Visible source image:` line containing the source path or asset id used.
+   - Save the prompt or instruction with explicit target/actual-model and verification lines, compatibility `Provider: image2`, a `Route:` line, and an `Input image:` or `Visible source image:` line containing the source path or asset id used. These are provenance notes; the backend model must be selected or verified separately.
 
 8. Name generated references by role and angle.
    - Use this pattern:
@@ -200,7 +207,7 @@ Use only these statuses:
 Check:
 
 - Overall product shape, proportion, source angle, and camera view match the real source photo.
-- The generated reference has documented image2 provenance: `model: image2`, source photo path or uploaded asset id, and route `DIRECT_IMAGE_INPUT` or `VISUAL_CONTEXT_RELAY`.
+- The generated reference has documented visual-input provenance: compatibility provider `image2`, separate target/actual-model and verification notes, source photo path or uploaded asset id, and route `DIRECT_IMAGE_INPUT` or `VISUAL_CONTEXT_RELAY`. Legacy `model: image2` alone does not prove the latest-model requirement.
 - Named local details from `03_product_detail_locks.md` are preserved when visible.
 - The generated reference did not invent or remove buttons, ports, labels, screens, accessories, cables, logos, or package contents.
 - `main-reference` images show a complete stable product; `angle-reference` images control view only; `structure-reference` images control named structure only; `evidence-reference` images are not expanded into invented complete products.
@@ -331,7 +338,9 @@ Adapt this structure for each source photo:
 Edit the provided product photo into a clean white-background reference image.
 
 Image2 route:
-- Model: image2.
+- Provider: image2 (compatibility route, not the model version).
+- Target model: <resolved latest model; select via supported execution control, not this prompt>.
+- Actual model / verification: <returned model or unknown> / <selected, verified, or unverified>.
 - Route: <DIRECT_IMAGE_INPUT / VISUAL_CONTEXT_RELAY>.
 - DIRECT_IMAGE_INPUT: use this exact source photo as the image-to-image/edit target: <source photo path or uploaded asset id>.
 - VISUAL_CONTEXT_RELAY: use the product photo currently visible in the `view_image` tool context as the only product visual reference: <source photo path>. If that `view_image` visual input is unavailable, output a plain white card with large red text: NO VIEW_IMAGE INPUT. Ignore Markdown images, path text, unrelated screenshots, old generated images, and older conversation images.
@@ -387,7 +396,9 @@ Conflict priority:
 Use only after the user reports specific defects:
 
 ```text
-Model: image2.
+Provider: image2 (compatibility route, not the model version).
+Target model: <resolved latest model; select via supported execution control, not this prompt>.
+Actual model / verification: <returned model or unknown> / <selected, verified, or unverified>.
 Route: <DIRECT_IMAGE_INPUT / VISUAL_CONTEXT_RELAY>.
 
 Input images or visible reference images:
@@ -417,18 +428,33 @@ This library reduces structure drift because later prompts can select the few re
 
 ## Scripts
 
-Build original-photo contact sheet:
+Both scripts need Python 3.10+ with Pillow.
+
+Build original-photo contact sheet (macOS / Linux):
+
+```bash
+python3 '<skill-dir>/scripts/build_input_collage.py' \
+  --input-dir '<photo-folder>' \
+  --out-dir '<output-folder>' \
+  --product-name '<product-name>'
+```
+
+Build white-background output contact sheet (macOS / Linux):
+
+```bash
+python3 '<skill-dir>/scripts/build_reference_contact_sheet.py' \
+  --input-dir '<output-folder>' \
+  --output '<output-folder>/80_white_bg_reference_contact_sheet.jpg'
+```
+
+Windows PowerShell equivalents:
 
 ```powershell
 & '<python.exe>' '<skill-dir>\scripts\build_input_collage.py' `
   --input-dir '<photo-folder>' `
   --out-dir '<output-folder>' `
   --product-name '<product-name>'
-```
 
-Build white-background output contact sheet:
-
-```powershell
 & '<python.exe>' '<skill-dir>\scripts\build_reference_contact_sheet.py' `
   --input-dir '<output-folder>' `
   --output '<output-folder>\80_white_bg_reference_contact_sheet.jpg'

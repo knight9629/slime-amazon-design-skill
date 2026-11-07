@@ -129,7 +129,7 @@ def slot_manifest_for_plan(plan: dict[str, Any]) -> dict[str, Any]:
                 "APLUS_PREMIUM_DESKTOP": "premium_aplus_desktop",
                 "APLUS_PREMIUM_MOBILE": "premium_aplus_mobile",
             }[group]
-            fixed = {"basic_aplus": [960, 600], "premium_aplus_desktop": [1464, 600],
+            fixed = {"basic_aplus": [970, 600], "premium_aplus_desktop": [1464, 600],
                      "premium_aplus_mobile": [600, 450]}
             if size != fixed[export_group]:
                 raise ValueError(f"{slot_id} {export_group} target must be {fixed[export_group]}")
@@ -144,8 +144,8 @@ def slot_manifest_for_plan(plan: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"{slot_id}.raw_output_path requires a supported image extension")
         slots.append({"slot_id": slot_id, "group": export_group, "raw_file": raw.name,
                       "output_file": output.name, "size": size})
-    if sum(slot["group"] == "basic_aplus" for slot in slots) > 7:
-        raise ValueError("stable Basic A+ supports at most 7 standalone images")
+    if sum(slot["group"] == "basic_aplus" for slot in slots) > 5:
+        raise ValueError("stable Basic A+ supports at most 5 standalone images")
     return {"version": 1, "slots": slots}
 
 

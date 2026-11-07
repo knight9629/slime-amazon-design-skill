@@ -2,15 +2,20 @@
 
 面向 Codex 的 Amazon 主图与 A+ 完整设计工作流：从真实产品资料、竞品展示分析、参考选择和风格小样，推进到正式出图、质量检查与导出。
 
-**完整安装包：1.0.1 · 核心工作流：1.0.0**
+**完整安装包：1.0.2 · 核心工作流：1.0.0**
 
-[下载完整安装包](https://github.com/knight9629/slime-amazon-design-skill/releases/download/v1.0.1/slime-amazon-design-skill-v1.0.1.zip) · [查看发布说明](https://github.com/knight9629/slime-amazon-design-skill/releases/tag/v1.0.1) · [中文安装与使用教程](https://rcnbcea2lthm.feishu.cn/docx/UEiYdpB3CouT5Uxj36dcT5R4nvf)
+[下载完整安装包](https://github.com/knight9629/slime-amazon-design-skill/releases/download/v1.0.2/slime-amazon-design-skill-v1.0.2.zip) · [查看发布说明](https://github.com/knight9629/slime-amazon-design-skill/releases/tag/v1.0.2) · [中文安装与使用教程](https://rcnbcea2lthm.feishu.cn/docx/UEiYdpB3CouT5Uxj36dcT5R4nvf)
 
-## 这次补齐了什么
+## 1.0.2 修复了什么
 
-1.0.1 将完整流程调用的 **2 个核心 Skill + 4 个辅助 Skill** 一起分发，包含它们各自的脚本、模板、规则和 agent 配置。新用户无需再另找这四个辅助 Skill。旧 1.0.0 下载包只有两个核心，建议重新下载本完整包。
+- **正式出图可以导出了**：生图工具按固定像素出图，4:5 主图、Premium A+ 电脑端等比例总会差零点几个百分点，旧版会一直判定返工。现在原图比例与目标相差不超过 1% 时直接缩放成精确尺寸并记录，超过 1% 才返工。预检、导出和状态机使用同一规则。
+- **状态机不再"看不见"已生成的图**：初始化会为本次运行建立 `输出/<运行名>` 文件夹并加入扫描范围；白底参考图、风格小样和正式出图都放在里面。放错位置时会提示登记文件夹，而不是让 AI 重新生成。
+- **实拍图识别更准**：只看项目内部的文件夹名，竞品截图、案例图和输出图不会再被当成实拍图；`实物图`、`IMG_xxxx`、`DSCxxxx` 能被识别；iPhone 的 `.HEIC` 会提示先转成 JPG。
+- **Mac 上安装不再误报**：Finder 生成的 `.DS_Store` 等系统文件不会再让校验失败，也不会被装进技能目录。
+- **Basic A+ 尺寸更正**：改为 `970x600`（Standard Image Header With Text），最多 5 张（Basic A+ 模块上限）。
+- 文档补充 macOS 命令，去掉投影仪专属的固定图位，修正竞品分析模板表格。
 
-这是安装包的依赖补齐更新，核心设计流程仍为 1.0.0。四个辅助模块保留各自的版本标识，并明确遵循 1.0 的编排约定；不会改写已有商品项目。
+1.0.1 起完整包包含 **2 个核心 Skill + 4 个辅助 Skill**，以及各自的脚本、模板、规则和 agent 配置。四个辅助模块保留各自的版本标识，并遵循 1.0 的编排约定；安装不会改写已有商品项目。
 
 | 已包含的 Skill | 负责什么 |
 | --- | --- |
@@ -52,7 +57,7 @@
 
 ## 手动安装与检查
 
-在解压后的根目录运行。macOS / Linux 使用 `python3`，Windows 可用 `py -3` 替换；如果当前 Python 版本低于 3.10，先选择较新版本。
+在解压后的根目录运行。macOS / Linux 使用 `python3`，Windows 可用 `py -3` 替换；如果当前 Python 版本低于 3.10，先选择较新版本。macOS 自带的 `python3` 通常是 3.9：`verify_package.py` 可以直接运行，`install.py --check` 会提示环境未就绪，正式使用请改用 python.org 或 Homebrew 安装的 3.10+。
 
 ```bash
 python3 verify_package.py
@@ -66,7 +71,7 @@ python3 install.py
 python3 install.py --backup
 ```
 
-`verify_package.py` 检查六个 Skill 与清单哈希。`--check` 不写安装目录，并分别报告文件完整性与 Python/Pillow 情况。运行依赖缺失时，安装文件成功也不代表运行环境已就绪。
+`verify_package.py` 检查六个 Skill 与清单哈希；Finder 的 `.DS_Store`、`._*` 和 Python 缓存会被忽略，也不会被安装。`--check` 不写安装目录，并分别报告文件完整性与 Python/Pillow 情况。运行依赖缺失时，安装文件成功也不代表运行环境已就绪。
 
 如需隔离安装 Python 依赖，可在解压目录创建虚拟环境（macOS / Linux）：
 
@@ -89,7 +94,7 @@ py -3 -m venv .venv
 后续运行图片处理脚本时也使用这个已装依赖的 Python。解压目录中的 `.venv` 是本地运行环境，无需复制进 Skill 目录。使用代码仓库也可以安装：
 
 ```bash
-git clone --branch v1.0.1 --depth 1 https://github.com/knight9629/slime-amazon-design-skill.git
+git clone --branch v1.0.2 --depth 1 https://github.com/knight9629/slime-amazon-design-skill.git
 ```
 
 ## 开始使用
@@ -111,7 +116,7 @@ git clone --branch v1.0.1 --depth 1 https://github.com/knight9629/slime-amazon-d
 
 流程会先整理参考图与产品事实，完成竞品与卖点分析，再推荐风格、制作小样并等待选择。确认后在同一个任务中继续正式生产。图片数量、A+ 类型、语言、端别与轮播模块以本次任务确认为准。
 
-最终导出要求原图比例与目标一致，再等比例调整像素；内容通过不代表尺寸、文件和人工视觉验收都已通过。
+最终导出文件是目标精确尺寸：原图比例与目标相差不超过 1% 时直接缩放并记录在清单的 `dimension_corrections`，超过 1% 回到生图返工，不裁切、不补边。内容通过不代表尺寸、文件和人工视觉验收都已通过。
 
 ## 验证与文件清单
 

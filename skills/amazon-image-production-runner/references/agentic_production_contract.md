@@ -67,6 +67,8 @@ worker 不得修改：
 
 ## 图片 worker 五字段 packet
 
+`LATEST_IMAGE_MODEL`: 主控先核对当前官方模型文档并验证可执行路线，再在 worker 任务消息中内联“已解析的目标模型、支持该模型的执行路线、版本验证状态”。这些是独立于五字段业务 packet 的执行指令，不追加 packet 字段，也不把模型名称塞进生图 prompt 冒充模型选择。`image2` / `provider: image2` 是兼容路线标识，不是真实模型版本。worker 不读额外文件；无法执行指定路线时返回标准 `OTHER` 失败，`error_message` 包含 `model_selection_unavailable`。严格要求最新模型而路线不可选择/核实时，主控在派发前标记 blocked，实际模型记为 `unknown` / `unverified`；不得偷偷改用付费 API。目标/实际模型、验证依据与官方来源由主控记录在既有 run notes，最小回执不构成底层版本证明。
+
 只允许：
 
 ```json
@@ -212,7 +214,7 @@ Verdict schema：
 
 Profile 有失败时 `status=FAIL` 且 `failed_slot_ids` 与 `blocking_findings[].slot_id` 完全一致；每条 profile finding 含非空 `finding`。Verdict 有失败时每条 merged finding 含 `slot_id`、全部来源 `profile_ids` 和非空 `findings`，且失败 slot 并集必须精确匹配。
 
-`EXACT_RATIO_EXPORT`: stable 保留精确比例导出限制。原图必须与目标宽高比完全一致，才允许等比例 resize 到精确像素；任何比例不符、需裁切/补边/拉伸/拼接/合成或有可见失真时回到 image2。正式版 1.0.0 不支持旧 0.6.11 的有限比例矫正。
+`BOUNDED_RATIO_EXPORT`: 导出文件必须是目标精确像素。生图工具按固定像素预算出图，非正方形目标的原图比例会有零点几的偏差（例如 4:5 得到 `1122x1402`，`1464x600` 得到 `1959x803`）。原图宽高比与目标相差不超过 1% 时直接缩放到目标像素，并在 `dimension_corrections` 记录；同比例原图直接缩放。超过 1%、需裁切/补边/拼接/合成或有可见失真时回到 image2。
 
 ## 返工
 
@@ -223,4 +225,4 @@ Profile 有失败时 `status=FAIL` 且 `failed_slot_ids` 与 `blocking_findings[
 
 ## 完成
 
-只有主控能确认 receipts/ledger/registry、合并 QC、执行 deterministic export、验证 exact-ratio export 并写 `production_manifest.json`。任何 worker 都不得宣布整套完成。
+只有主控能确认 receipts/ledger/registry、合并 QC、执行 deterministic export、验证 bounded-ratio export 并写 `production_manifest.json`。任何 worker 都不得宣布整套完成。

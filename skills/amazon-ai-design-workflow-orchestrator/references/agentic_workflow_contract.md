@@ -26,6 +26,8 @@ Version: `1.0.0`
 - `NORMALIZED_UNIQUE_PATHS`: 路径必须先 resolve/规范化再做冲突检查；`a/../same.png` 与 `same.png` 属于同一目标。
 - `IMAGE_WORKER_REPORT_FORBIDDEN`: IMAGE_WORKER 禁止 `required_report_path`、`promoted_output_paths` 和 `workers/outputs`；成功 `VERIFIED` 只能来自内联 generation receipt。
 - `NO_SHARED_WRITES`: 任意两个 worker 不得写同一文件；子智能体不得修改 scope、truth、locks、plan、prompt、state、ledger、checkpoint 或 manifest。
+- `BRANCH_OUTPUT_ISOLATION`: 并行方案使用独立输出目录、修改脚本和写入归属；公共素材只读复用，独立 run 的状态放在各自根目录。主控将 SKILL.md 的基线保留项及 `ARTIFACT_SCOPED_METHOD` 写入对应任务输入，不把某一产物的方法扩展到其他方案。
+- `SHARED_GUI_SERIALIZATION`: Photoshop、Blender、浏览器等共享控制会话同一时刻只有一个操作者；切换前明确交接。独立文件目录不能替代 GUI 操作隔离，无法隔离时顺序执行。
 - `FAILED_SLOTS_ONLY`: QC 失败后只返工失败 slot，保留全部 passing raw。
 - `COPY_QC`: 文案复核独立于 prompt 起草，检查含义、事实支持、栅格文字可读性、native copy 分离、alt text 和移动端可读性。
 - `VISUAL_PREFERENCE_CALIBRATION`: 新 stable run 执行 `references/reference_discovery.md` v2：按画面/排版用途检索，精选库优先并补充新案例；来源和真实 evidence 保留路径/hash。用户只对适用轴点喜欢/一般/不喜欢；按钮默认走 `reference_discovery.py submit`；明确聊天指令走 `NATIVE_CHAT_FEEDBACK` / `chat-submit`，带用户原话并绑定当前 pending hash、round 与 action，不要求重复点击。只提取明确样本/轴分数，全换不伪造逐卡 -1。`CONTINUE` 在画面与排版均有显式正向锚点时标记 `RATED`，再由主控写 hash-bound profile；`RESEARCH_ALL` 全换，`RESEARCH_REJECTED` 保留喜欢并替换其余，无正向则 `RESEARCH_REQUIRED`。不要求用户逐图解释、模块分配、额外 profile 批准或额外生成 pairwise。
@@ -65,6 +67,8 @@ Version: `1.0.0`
 | `QC_WORKER` | 只读产品结构、文案风格或技术 QC | 不得生图、返工或写 manifest |
 
 ## 图片 worker 五字段任务包
+
+`LATEST_IMAGE_MODEL`: 主控先核对当前官方模型文档并验证可执行路线，再在 worker 任务消息中内联“已解析的目标模型、支持该模型的执行路线、版本验证状态”。这些是独立于五字段业务 packet 的执行指令，不追加 packet 字段，也不把模型名称塞进生图 prompt 冒充模型选择。`image2` / `provider: image2` 是兼容路线标识，不是真实模型版本。worker 不读额外文件；无法执行指定路线时返回标准 `OTHER` 失败，`error_message` 包含 `model_selection_unavailable`。严格要求最新模型而路线不可选择/核实时，主控在派发前标记 blocked，实际模型记为 `unknown` / `unverified`；不得偷偷改用付费 API。目标/实际模型、验证依据与官方来源由主控记录在既有 run notes，最小回执不构成底层版本证明。
 
 图片 packet 只能包含：
 

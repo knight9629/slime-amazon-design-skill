@@ -18,10 +18,17 @@ SLOT_GROUP_DIRECTORIES = {
     "premium_aplus_mobile": "a_plus_premium_mobile",
 }
 SLOT_GROUP_FIXED_SIZES = {
-    "basic_aplus": (960, 600),
+    # Basic A+ full-width Standard Image Header With Text; Basic A+ allows 5 modules.
+    "basic_aplus": (970, 600),
     "premium_aplus_desktop": (1464, 600),
     "premium_aplus_mobile": (600, 450),
 }
+BASIC_APLUS_MAX_IMAGES = 5
+# BOUNDED_RATIO_EXPORT: image tools return a fixed pixel budget, so raw ratios
+# land a fraction of a percent off non-square targets (for example 1959x803 for
+# 1464x600). Within this limit the raw is resampled straight to the exact target;
+# anything larger needs image2 rework. Keep this equal to preflight_qc.py.
+MAX_ASPECT_CORRECTION_PCT = 1.0
 Image = None
 ImageDraw = None
 ImageFont = None
@@ -72,6 +79,16 @@ def aspect_matches(source_size: tuple[int, int], target_size: tuple[int, int]) -
     source_width, source_height = source_size
     target_width, target_height = target_size
     return source_width * target_height == target_width * source_height
+
+
+def aspect_error_pct(
+    source_size: tuple[int, int], target_size: tuple[int, int]
+) -> float:
+    source_width, source_height = source_size
+    target_width, target_height = target_size
+    source_ratio = source_width / source_height
+    target_ratio = target_width / target_height
+    return abs(source_ratio / target_ratio - 1.0) * 100.0
 
 
 def has_ratio(size: tuple[int, int], ratio: tuple[int, int]) -> bool:
@@ -199,8 +216,10 @@ def load_slot_manifest(path: Path) -> tuple[list[dict[str, object]], list[str]]:
             )
 
     basic_slot_count = sum(1 for slot in slots if slot["group"] == "basic_aplus")
-    if basic_slot_count > 7:
-        errors.append("slot manifest basic_aplus supports at most 7 standalone images")
+    if basic_slot_count > BASIC_APLUS_MAX_IMAGES:
+        errors.append(
+            f"slot manifest basic_aplus supports at most {BASIC_APLUS_MAX_IMAGES} standalone images"
+        )
 
     return slots, errors
 
@@ -216,6 +235,7 @@ def process_slot_manifest(
     written: list[tuple[dict[str, object], Path]] = []
     missing: list[str] = []
     rework: dict[str, list[str]] = {}
+    corrections: list[dict[str, object]] = []
     if not validation_errors:
         for slot in slots:
             group = str(slot["group"])
@@ -226,11 +246,14 @@ def process_slot_manifest(
             output_path = (
                 base_dir / SLOT_GROUP_DIRECTORIES[group] / str(slot["output_file"])
             )
-            reason = resize_no_crop(raw_path, output_path, slot["size"])
+            reason, correction = resize_for_target(raw_path, output_path, slot["size"])
             if reason:
                 rework.setdefault(group, []).append(reason)
             else:
                 written.append((slot, output_path))
+                if correction:
+                    correction["slot_id"] = slot["slot_id"]
+                    corrections.append(correction)
 
     if validation_errors:
         status = "INVALID_SLOT_MANIFEST"
@@ -252,6 +275,7 @@ def process_slot_manifest(
         "raw_dir": str(raw_dir),
         "slot_manifest": str(manifest_path.resolve()),
         "outputs": outputs,
+        "dimension_corrections": corrections,
         "missing": missing,
         "image2_rework_required": rework,
         "validation_errors": validation_errors,
@@ -275,18 +299,36 @@ def process_slot_manifest(
     return 0
 
 
-def resize_no_crop(src: Path, dst: Path, size: tuple[int, int]) -> str | None:
+def resize_for_target(
+    src: Path, dst: Path, size: tuple[int, int]
+) -> tuple[str | None, dict[str, object] | None]:
     with Image.open(src) as image:
         image = ImageOps.exif_transpose(image).convert("RGB")
-        if not aspect_matches(image.size, size):
+        source_size = image.size
+        exact_aspect = aspect_matches(source_size, size)
+        ratio_error = aspect_error_pct(source_size, size)
+        if not exact_aspect and ratio_error > MAX_ASPECT_CORRECTION_PCT:
             return (
                 f"{src.name}: {image.width}x{image.height} cannot become "
-                f"{size[0]}x{size[1]} without crop/pad/stretch; requires image2 rework"
+                f"{size[0]}x{size[1]} within the {MAX_ASPECT_CORRECTION_PCT:g}% ratio limit "
+                "without crop/pad/stretch; requires image2 rework",
+                None,
             )
         resized = image.resize(size, Image.Resampling.LANCZOS)
         dst.parent.mkdir(parents=True, exist_ok=True)
         resized.save(dst, "PNG", optimize=True)
-    return None
+    if exact_aspect:
+        return None, None
+    return None, {
+        "method": "SMALL_RATIO_CORRECTION",
+        "source_path": str(src.resolve()),
+        "output_path": str(dst.resolve()),
+        "source_size": list(source_size),
+        "target_size": list(size),
+        "aspect_error_pct": round(ratio_error, 6),
+        "max_aspect_correction_pct": MAX_ASPECT_CORRECTION_PCT,
+        "raw_source_preserved": True,
+    }
 
 
 def label_font(size: int = 18) -> ImageFont.ImageFont:
@@ -346,10 +388,11 @@ def process_group(
     count: int,
     output_suffix: str,
     size: tuple[int, int],
-) -> tuple[list[Path], list[str], list[str]]:
+) -> tuple[list[Path], list[str], list[str], list[dict[str, object]]]:
     written: list[Path] = []
     missing: list[str] = []
     rework_required: list[str] = []
+    corrections: list[dict[str, object]] = []
     for index in range(1, count + 1):
         raw_stem = f"{prefix}_{index:02d}_raw"
         raw_path = find_raw_file(raw_dir, raw_stem)
@@ -358,13 +401,15 @@ def process_group(
             continue
 
         output_path = output_dir / f"{prefix}_{index:02d}_{output_suffix}.png"
-        rework_reason = resize_no_crop(raw_path, output_path, size)
+        rework_reason, correction = resize_for_target(raw_path, output_path, size)
         if rework_reason:
             rework_required.append(rework_reason)
         else:
             written.append(output_path)
+            if correction:
+                corrections.append(correction)
 
-    return written, missing, rework_required
+    return written, missing, rework_required, corrections
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -434,8 +479,8 @@ def main() -> int:
     partial_manifest_path = preview_dir / "partial_production_manifest.json"
     final_manifest_path.unlink(missing_ok=True)
 
-    if args.basic_aplus_count > 7:
-        print("Basic A+ supports at most 7 standalone images")
+    if args.basic_aplus_count > BASIC_APLUS_MAX_IMAGES:
+        print(f"Basic A+ supports at most {BASIC_APLUS_MAX_IMAGES} standalone images")
         return 2
 
     if not raw_dir.exists():
@@ -476,15 +521,21 @@ def main() -> int:
         )
         return 2
 
-    main_files, missing_main, rework_main = process_group(
+    main_files, missing_main, rework_main, corrections_main = process_group(
         raw_dir, main_dir, "main", args.main_count, "1x1", main_size
     )
     main_portrait_files: list[Path] = []
     missing_main_portrait: list[str] = []
     rework_main_portrait: list[str] = []
+    corrections_main_portrait: list[dict[str, object]] = []
     if args.main_portrait_count > 0:
         portrait_suffix = f"{main_portrait_size[0]}x{main_portrait_size[1]}"
-        main_portrait_files, missing_main_portrait, rework_main_portrait = process_group(
+        (
+            main_portrait_files,
+            missing_main_portrait,
+            rework_main_portrait,
+            corrections_main_portrait,
+        ) = process_group(
             raw_dir,
             main_portrait_dir,
             "main_portrait",
@@ -493,18 +544,23 @@ def main() -> int:
             main_portrait_size,
         )
     aplus_suffix = f"{aplus_size[0]}x{aplus_size[1]}"
-    aplus_files, missing_aplus, rework_aplus = process_group(
+    aplus_files, missing_aplus, rework_aplus, corrections_aplus = process_group(
         raw_dir, aplus_dir, "aplus", args.aplus_count, aplus_suffix, aplus_size
     )
-    basic_aplus_files, missing_basic_aplus, rework_basic_aplus = process_group(
+    basic_aplus_files, missing_basic_aplus, rework_basic_aplus, corrections_basic_aplus = process_group(
         raw_dir,
         basic_aplus_dir,
         "aplus_basic",
         args.basic_aplus_count,
-        "960x600",
-        (960, 600),
+        "970x600",
+        SLOT_GROUP_FIXED_SIZES["basic_aplus"],
     )
-    premium_aplus_desktop_files, missing_premium_aplus_desktop, rework_premium_aplus_desktop = process_group(
+    (
+        premium_aplus_desktop_files,
+        missing_premium_aplus_desktop,
+        rework_premium_aplus_desktop,
+        corrections_premium_aplus_desktop,
+    ) = process_group(
         raw_dir,
         premium_aplus_desktop_dir,
         "aplus_premium_desktop",
@@ -512,7 +568,12 @@ def main() -> int:
         "1464x600",
         (1464, 600),
     )
-    premium_aplus_mobile_files, missing_premium_aplus_mobile, rework_premium_aplus_mobile = process_group(
+    (
+        premium_aplus_mobile_files,
+        missing_premium_aplus_mobile,
+        rework_premium_aplus_mobile,
+        corrections_premium_aplus_mobile,
+    ) = process_group(
         raw_dir,
         premium_aplus_mobile_dir,
         "aplus_premium_mobile",
@@ -580,6 +641,14 @@ def main() -> int:
         + rework_premium_aplus_desktop
         + rework_premium_aplus_mobile
     )
+    all_corrections = (
+        corrections_main
+        + corrections_main_portrait
+        + corrections_aplus
+        + corrections_basic_aplus
+        + corrections_premium_aplus_desktop
+        + corrections_premium_aplus_mobile
+    )
     status = "REWORK_REQUIRED" if all_rework else ("INCOMPLETE" if all_missing else "PASS")
     grouped_outputs = [
         ("main", main_files),
@@ -598,6 +667,7 @@ def main() -> int:
             for group, paths in grouped_outputs
             for path in paths
         ],
+        "dimension_corrections": all_corrections,
         "missing": all_missing,
         "main_outputs": [str(path) for path in main_files],
         "main_portrait_outputs": [str(path) for path in main_portrait_files],

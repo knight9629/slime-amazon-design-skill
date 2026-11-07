@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "workflow_version": "1.0.0",
   "package": "complete",
   "skills": [
@@ -13,15 +13,15 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "010e307d37e5eedc6c1792a7b27a9163f1562f2a7d8e74fa2a9ded753813b164"
+      "sha256": "b626c4efda7bcc4035670ad1e6d44bed3fbc879535446f77c53d4a2cfdc9d0c9"
     },
     {
       "path": "RELEASE_NOTES.md",
-      "sha256": "15c19d6dec6c599f66774e1ffbd5201574298a0d2b25100a437ec7b4b72fbf7d"
+      "sha256": "78963ec19c749d4fdd93b800913f4b4a46421b548f7c2f49436dd44cd265f663"
     },
     {
       "path": "install.py",
-      "sha256": "90c85047609978fa3a4b8865c3377bdcaddb78df6beeee6bf4de1ee7e3b7d76e"
+      "sha256": "6d3de2d18383569fb7a7f305b2f5a9ce09a315d50c8fde17a8496b1026bf1724"
     },
     {
       "path": "requirements.txt",
@@ -29,11 +29,11 @@
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/SKILL.md",
-      "sha256": "745453d191c052ca3c4f625b0d3bb496826779b6ebd409f16dee1f464aca0167"
+      "sha256": "3c960241d4d61cea1e5b0a4617070581e1bf25a66ba42a07c73f4e50263c9386"
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/agents/openai.yaml",
-      "sha256": "b30f0dd784ed25f3b822cc9a86a1fcea974a2f5ed63eb8e30a7dcfe661115c25"
+      "sha256": "36bc9d01eddc5bda69431d0f9b30ab000c22ddc894c6153e7ec2ad7077b34c38"
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/assets/visual-reference-rater.template.html",
@@ -41,7 +41,7 @@
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/references/agentic_workflow_contract.md",
-      "sha256": "7ab75d7a2c7f7a097cb4caebc52eac6b0599507829159adba79487e9df151808"
+      "sha256": "388138d01d2bbeb2a47944a0b308024013e5a42a42da81e1cbfc598e981f6e61"
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/references/category_design_playbooks.md",
@@ -49,7 +49,7 @@
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/references/production_scope_contract.md",
-      "sha256": "79cd11e4eec98dd3a9f4f888de0c646335708d3f54fa0b457538574304eabbe5"
+      "sha256": "1076b6e397338fb3947c3ff120b6590a1b66d99ba97edd0a54169e0cef43e17b"
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/references/reference_discovery.md",
@@ -60,16 +60,12 @@
       "sha256": "b7999ff223e7d8846773a0194c2b90eefd0d464b89d3551808283725f609c263"
     },
     {
-      "path": "skills/amazon-ai-design-workflow-orchestrator/references/visual_preference_calibration.md",
-      "sha256": "26e981c2f4ad5998a892ea8198c642cefe323f5289c545f0cc258ebd58243c64"
-    },
-    {
       "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/adaptive_scheduler.py",
       "sha256": "58909163746fa4f7883c9c0dd011c0e33647297c0930e024a5b2ce12069669ea"
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/bootstrap_run.py",
-      "sha256": "5cbab3ebdc4d7299cf9725234df9ac08838e7d793c34fd3f177111656c5a2974"
+      "sha256": "521dcc3ce665758dd6db72c0c71c2e864a3ae04f2f0f0e6686fba83588603860"
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/build_visual_reference_rater.py",
@@ -81,11 +77,11 @@
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/derive_production_artifacts.py",
-      "sha256": "890694a1245b7e83283cb173e438aad31f098af14431d1f4f5afc603956f710c"
+      "sha256": "0f17b224f93c8f80dc456b035bea33caa047a1231683d96f27b40bd820e1f063"
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/design_workflow_state.py",
-      "sha256": "f00d0e363ced89f302f1f7c2a6df7182885d7d71a85df93b49134dc748a323e3"
+      "sha256": "437a8e25ac6955cd7caf5f1a71ad97434c04fbb3bbce2cea5be7e600b7848ffb"
     },
     {
       "path": "skills/amazon-ai-design-workflow-orchestrator/scripts/generation_ledger.py",
@@ -97,7 +93,7 @@
     },
     {
       "path": "skills/amazon-competitor-creative-research/SKILL.md",
-      "sha256": "86d561ffa524716dda649b9a7140ab4c9d6d7b2d970776cadd6a77a40df5e7b1"
+      "sha256": "fe08a670513a18f50b7fb7d8170eb0aa295b08b555d789a73747f3c283a8adb4"
     },
     {
       "path": "skills/amazon-competitor-creative-research/agents/openai.yaml",
@@ -105,7 +101,7 @@
     },
     {
       "path": "skills/amazon-creative-style-sampler/SKILL.md",
-      "sha256": "c58a2687e7d5909592fddcc810df7fb9d0d3a6a23231848349ddb3b084082f95"
+      "sha256": "42a3e7fb1ee2c9e28321cee2fccdd0a62d5851d92baff0a3a70bb3ee7da41e99"
     },
     {
       "path": "skills/amazon-creative-style-sampler/agents/openai.yaml",
@@ -113,15 +109,15 @@
     },
     {
       "path": "skills/amazon-image-production-runner/SKILL.md",
-      "sha256": "d822223a7f4f9157c7f29f726b611d4e65c78d19cdcea8447fd183f8910c588b"
+      "sha256": "c7524117f1b8ca9675562997b0ab1a41e3c8b2d4612419533ade1c08d54f18c5"
     },
     {
       "path": "skills/amazon-image-production-runner/agents/openai.yaml",
-      "sha256": "8cde17bdc0c395ca4f4e223a96c078365022dd248a23222282e1db2b5e584ac7"
+      "sha256": "76fab00bb3082be7a8aab4d1b368acea1cdfd5925181819dabea8fe33c6e7627"
     },
     {
       "path": "skills/amazon-image-production-runner/references/agentic_production_contract.md",
-      "sha256": "a06f9d8adfbdd4775de649548825cf322cd0bb7b28cc12712870b474d3409842"
+      "sha256": "fd2f0a0d8a057f85e26041d5d3d2e633e17bae81c0ad9e511f1d0996c87c17a4"
     },
     {
       "path": "skills/amazon-image-production-runner/references/layout_matrix_contract.md",
@@ -133,19 +129,19 @@
     },
     {
       "path": "skills/amazon-image-production-runner/references/slot_manifest_contract.md",
-      "sha256": "3508382c897f7db30f8d73c02235e8beb74e79e19db76b0f66a0a3966ddc1c26"
+      "sha256": "7979b528087e71741d36b761308ca9bb0bdf042a978b116c7a2344318f81445a"
     },
     {
       "path": "skills/amazon-image-production-runner/scripts/postprocess_images.py",
-      "sha256": "e3fdb7bf5d37b74b4195e95e4966dc432470e84d257a76237ac018be35bb669c"
+      "sha256": "b750fc1d946eb6aa8d6b558439068a18b94903325915515f3d1be34615b85046"
     },
     {
       "path": "skills/amazon-image-production-runner/scripts/preflight_qc.py",
-      "sha256": "70b8e95bf3e4a472eee1aa122f25ea8678ae7a6a68dc748b60d75a4ee9f8f753"
+      "sha256": "997f6dd23b5233d18ee8b98f5e91be44a37ab0ea8e98f2cc351864ca08cbf866"
     },
     {
       "path": "skills/amazon-product-selling-point-brief/SKILL.md",
-      "sha256": "33280443f56e66f142d60ab2726ac0cca49f3e1db1583d1b41223ef3c5f6651b"
+      "sha256": "f4bbb2ccaff0fbd389176f3ade154ba850be09a73995364bfb656dde92f2796a"
     },
     {
       "path": "skills/amazon-product-selling-point-brief/agents/openai.yaml",
@@ -153,7 +149,7 @@
     },
     {
       "path": "skills/product-reference-composer/SKILL.md",
-      "sha256": "a566284d9484affda3d6eb2c2fc04fdeb2267cfca368ce81d2a2427ce80d54ed"
+      "sha256": "c3a87ba8aa028e119b2551dad7d2d189ff6e01265985a01f230bffc73f7f865a"
     },
     {
       "path": "skills/product-reference-composer/agents/openai.yaml",
@@ -173,7 +169,7 @@
     },
     {
       "path": "verify_package.py",
-      "sha256": "fcc3b4f848ce0a4273ddf5a1f3a74c1105182276e4ad759f0d20833155a3aefb"
+      "sha256": "b17b8775d3c9cbe1e00d264048dc7b91544e9968079849ce953a371f1b39113f"
     }
   ]
 }

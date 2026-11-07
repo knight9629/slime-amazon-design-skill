@@ -18,6 +18,18 @@ EXPECTED_SKILLS = (
     "amazon-creative-style-sampler",
 )
 ROOT_FILES = ("README.md", "RELEASE_NOTES.md", "install.py", "verify_package.py", "requirements.txt")
+# Finder, Windows Explorer and Python create these when a user opens or runs the
+# package; they are never installed and must not make a good package look broken.
+OS_GENERATED_NAMES = (".DS_Store", "Thumbs.db", "desktop.ini")
+
+
+def is_os_generated(path):
+    return (
+        path.name in OS_GENERATED_NAMES
+        or path.name.startswith("._")
+        or path.suffix == ".pyc"
+        or "__pycache__" in path.parts
+    )
 
 
 def sha256(path):
@@ -84,9 +96,13 @@ def verify_package(root):
     if not required.issubset(listed):
         raise ValueError("清单缺少必需文件：" + ", ".join(sorted(required - listed)))
     skills_root = root / "skills"
-    if not skills_root.is_dir() or sorted(p.name for p in skills_root.iterdir()) != sorted(EXPECTED_SKILLS):
+    if not skills_root.is_dir() or sorted(
+        p.name for p in skills_root.iterdir() if not is_os_generated(p)
+    ) != sorted(EXPECTED_SKILLS):
         raise ValueError("skills 目录必须完整包含 6 个指定 Skill。")
     for path in skills_root.rglob("*"):
+        if is_os_generated(path.relative_to(root)):
+            continue
         if path.is_file() and path.relative_to(root).as_posix() not in listed:
             raise ValueError("Skill 中有未登记的文件：" + str(path.relative_to(root)))
     return manifest

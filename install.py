@@ -10,7 +10,7 @@ import sys
 import tempfile
 
 sys.dont_write_bytecode = True
-from verify_package import EXPECTED_SKILLS, sha256, verify_package
+from verify_package import EXPECTED_SKILLS, OS_GENERATED_NAMES, sha256, verify_package
 
 
 def check_environment():
@@ -56,8 +56,9 @@ def install(root, dest, manifest, backup):
     installed = []
     with tempfile.TemporaryDirectory(prefix=".slime-install-", dir=dest.parent) as temporary:
         stage = Path(temporary)
+        skip_generated = shutil.ignore_patterns(*OS_GENERATED_NAMES, "._*", "__pycache__", "*.pyc")
         for name in EXPECTED_SKILLS:
-            shutil.copytree(root / "skills" / name, stage / name)
+            shutil.copytree(root / "skills" / name, stage / name, ignore=skip_generated)
         verify_installed(stage, manifest)
         if conflicts:
             backup_root = dest.parent / (dest.name + "-backups")

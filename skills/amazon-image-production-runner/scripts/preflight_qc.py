@@ -13,7 +13,10 @@ from pathlib import Path
 from typing import Any
 
 
-MAX_ASPECT_CORRECTION_PCT = 0.0  # EXACT_RATIO_EXPORT
+# BOUNDED_RATIO_EXPORT: image tools return a fixed pixel budget, so raw ratios
+# land a fraction of a percent off non-square targets (for example 1959x803 for
+# 1464x600). Keep this equal to postprocess_images.py and design_workflow_state.py.
+MAX_ASPECT_CORRECTION_PCT = 1.0
 
 
 def file_sha256(path: Path) -> str:
@@ -178,12 +181,19 @@ def run_preflight(
                 result["dimension_status"] = "SAME_ASPECT_RESIZE_REQUIRED"
                 result["requires_visual_qc"] = True
                 needs_visual_qc = True
+            elif ratio_error <= MAX_ASPECT_CORRECTION_PCT:
+                result["dimension_status"] = "SMALL_RATIO_CORRECTION_CANDIDATE"
+                result["requires_visual_qc"] = True
+                needs_visual_qc = True
             else:
                 result["dimension_status"] = "FAIL"
                 slot_errors.append(
-                    f"dimensions {actual[0]}x{actual[1]} violate EXACT_RATIO_EXPORT for target {target_value}"
+                    f"dimensions {actual[0]}x{actual[1]} exceed the {MAX_ASPECT_CORRECTION_PCT:g}% "
+                    f"BOUNDED_RATIO_EXPORT limit for target {target_value}"
                 )
-                errors.append(f"{slot_id}: EXACT_RATIO_EXPORT requires an exact aspect ratio")
+                errors.append(
+                    f"{slot_id}: BOUNDED_RATIO_EXPORT ratio error exceeds {MAX_ASPECT_CORRECTION_PCT:g}%"
+                )
         else:
             result["dimension_status"] = "PASS"
 
@@ -199,8 +209,12 @@ def run_preflight(
                 or not isinstance(ratio_error, (int, float))
                 or ratio_error > MAX_ASPECT_CORRECTION_PCT
             ):
-                slot_errors.append("EXACT_RATIO_EXPORT forbids aspect-ratio correction")
-                errors.append(f"{slot_id}: EXACT_RATIO_EXPORT forbids aspect-ratio correction")
+                slot_errors.append(
+                    f"dimension correction exceeds the {MAX_ASPECT_CORRECTION_PCT:g}% BOUNDED_RATIO_EXPORT limit"
+                )
+                errors.append(
+                    f"{slot_id}: BOUNDED_RATIO_EXPORT correction exceeds {MAX_ASPECT_CORRECTION_PCT:g}%"
+                )
 
         expected_copy = [str(item) for item in slot.get("image_embedded_copy", []) if str(item).strip()]
         if expected_copy:

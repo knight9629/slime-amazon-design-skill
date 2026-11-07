@@ -44,7 +44,7 @@ Ask only for missing fields:
 - A single requested main-image ratio uses `main.count`.
 - When both `1:1` and `4:5` are requested, omit ambiguous `main.count` and require `main.count_by_ratio` with a positive count for each ratio.
 - Basic A+ uses `image_count`, not `count`.
-- Basic A+ remains fixed at `960x600` and supports at most 7 standalone images.
+- Basic A+ is fixed at `970x600` (Standard Image Header With Text) and supports at most 5 standalone images, Amazon's Basic A+ module limit.
 - Premium A+ `module_count` is the number of Amazon modules, maximum 7.
 - Premium A+ `desktop_image_count` includes carousel slides.
 - Premium A+ `mobile_image_count` is `0` unless mobile outputs are explicitly requested.
@@ -87,7 +87,7 @@ The resolved example demonstrates the schema only. Actual carousel placement mus
   "aplus": {
     "enabled": true,
     "type": "Basic",
-    "image_count": 7
+    "image_count": 5
   }
 }
 ```
